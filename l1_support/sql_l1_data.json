@@ -1,0 +1,683 @@
+{
+"APP-PO-14142": {
+    "Module": "Purchase",
+    "URL": "https://support.oracle.com/epmos/faces/SearchDocDisplay?_adf.ctrl-state=ldhdgsjf7_1194&_afrLoop=452212626219431",
+    "Applies To": "Oracle Purchasing - Version 11.5.10 to 12.1 [Release 11.5 to 12.1]\nInformation in this document applies to any platform.\nPOXRQERQ.fmb\nPOXAPAPC.pll",
+    "Symptoms": "1) Users are not able to submit requisitions in iProcurement (using AME) due to error :\n\n\"You do not have the authority to approve this requisition and an Approval List was not created automatically. Please contact your system administrator\"\n\n2) In Oracle Purchasing after clicking Approve in the Requisition form, the following error occurs:\n\nAPP-PO-14142: WF_Error-000: ORA-0000 normal, successful completion\n\nCause: A SQL error hass occurred in WF_Error. The SQL error is ORA:0000: normal, successful completion.\n\nAction: Take note of both this error number and the actions you were trying to perform.\nContact your system administrator for further assistance.\n\nAlso, trace files show that this error is occuring:\n\nORA-20001: Oracle Approvals Management has found parallelization configuration details. The context in which ame_api has been invoked does not support parallelization\n\nNote: In an additional case parallelization was done in the Oracle Human Resources module creating the error on requisition approval with 'POR_AME_APPROVAL_LIST_WF1S.Get_Next_Approver (Get_Next_Approver: 002- 787437-REQUISITION-PURCHASE, ORA-20001: Oracle Approvals Management has found parallelization configuration details'.",
+    "Cause": "For release 11.5.10 or if not using parallelization in Release 12, AME configuration variables are not correctly setup.\n\nIf using parallelization in Release 12, the issue is caused in POXAPAPC.pll, when submitting the requisition for approval, we used to have the following call : ame_api.clearAllApprovals. This should be replaced by ame_api2.clearAllApprovals for Release 12 and onwards.",
+    "Solution": "For all versions:\n1. First confirm that the client is intentionally using AME. If they are not, see Note 470204.1.\n\nFor Release 11.5.10 / Release 12 and parallelization will not be used:\n2. If AME is intentionally used:\n\n\n1. Run @checkAME11510Setup.sql; and it will return numerous errors, such as:\nIncorrect value for Transaction Type Configuration Variable\nor\nNon serial or Order Number Voting Regime for Approval Group : XYZ Approval group\n\n2. Then run the following:\n\nFor more information on these scripts see Note 338508.1.\nFor Release 12 if parallelization will be used:\nIf AME is intentionally used:\n\n1. Download and review the readme and pre-requisites for Patch:6956892\n\n2. Ensure that you have taken a backup of your system before applying the recommended patch.\n\n3. Apply the patch in a test environment.\n\n4. Confirm the following file versions:\nPOXAPAPC.pld and version 120.11.12000000.7\n\nYou can use the commands like the following:\nstrings -a $AU_TOP/resource/POXAPAPC.pll | grep -i '$Header:'\n\n5. Retest the issue.\n\n6. Migrate the solution as appropriate to other environments.\n\nFor Release 12.1 :\nIf AME is intentionally used, this is fixed by file version POXAPAPC.pld 120.18.12010000.3 or higher:\n\n1. Download and review the readme and pre-requisites for Patch 8352586:R12.PO.B\n\n2. Ensure that you have taken a backup of your system before applying the recommended patch.\n\n3. Apply the patch in a test environment.\n\n4. Confirm the following file versions:\nPOXAPAPC.pld 120.18.12010000.4\n\nYou can use the commands like the following:\nstrings -a $AU_TOP/resource/POXAPAPC.pll | grep -i '$Header:'\n\n5. Retest the issue.\n\n6. Migrate the solution as appropriate to other environments.",
+    "Last Update": "2023-05-02 00:00:00",
+    "check_list": {
+    "query1": ["Check if AME is intentionally used:", "SELECT * FROM <Your_AME_Configuration_Table> WHERE <Your_Conditions>;"],
+    "query2": ["For Release 11.5.10 or Release 12 without parallelization:", "@checkAME11510Setup.sql;", "-- Check for errors reported by the script and address them accordingly."],
+    "query3": ["For Release 12 with parallelization:", "SELECT * FROM <Your_AME_File_Version_Table> WHERE <Your_Conditions>;", "strings -a $AU_TOP/resource/POXAPAPC.pll | grep -i '$Header:'", "-- Retest the issue and migrate the solution as appropriate to other environments."],
+    "query4": ["For Release 12.1:", "SELECT * FROM <Your_AME_File_Version_Table> WHERE <Your_Conditions>;", "strings -a $AU_TOP/resource/POXAPAPC.pll | grep -i '$Header:'", "-- Retest the issue and migrate the solution as appropriate to other environments."]
+    },
+    "place_holder": ["<Your_AME_Configuration_Table>", "<Your_AME_File_Version_Table>", "<Your_Conditions>"]
+},
+
+    "JBO-27122": {
+        "Module": "Purchase",
+        "URL": "https://support.oracle.com/epmos/faces/SearchDocDisplay?_adf.ctrl-state=ldhdgsjf7_1744&_afrLoop=452919486874882",
+        "Applies To": "Oracle Purchasing - Version 12.1.3 and later\nInformation in this document applies to any platform.",
+        "Symptoms": "When navigating to Purchasing Options, an error occurs. Error: oracle.apps.fnd.framework.OAException: oracle.jbo.SQLStmtException: JBO-27122: SQL error during statement preparation. Statement: SELECT PoSystemParameterEO.ACCRUED_CODE_COMBINATION_ID, PoSystemParameterEO.ORG_ID, ## Detail 0 ## java.sql.SQLSyntaxErrorException: ORA-00904: \"POSYSTEMPARAMETEREO\".\"GROUP_SHIPMENTS_FLAG\": invalid identifier",
+        "Cause": "Inconsistent file versions The system has PurchasingOptionsVO.xml 120.6.12010000.2, but the view would select PoSystemParameterEO.GROUP_SHIPMENTS_FLAG, a feature introduced only at later version urchasingOptionsVO.xml 120.6.12010000.10 thus error occurs REFERENCES --------------- Bug 14608120 - PO SHIPMENT GETTING CANCELED IF THE WO/ASCP ASSOCIATED TO ONE OF PO DISTRIBUTION",
+        "Solution": "To implement the solution, please execute the following steps: 1. Download and review the readme and pre-requisites for Patch 16932370:R12.PO.B - In Oracle Purchasing , po autocreate does not fill document_creation_method in po_headers_all table. 2. Ensure that you have taken a backup of your system before applying the recommended patch. 3. Apply the patch in a test environment. 4. Confirm the following file versions: PurchasingOptionsVO.xml 120.6.12010000.10 PurchasingOptionsPG.xml 120.18.12010000.3 PoSystemParameterEOImpl.java 120.3.12010000.5 PurchasingOptionsVORowImpl.java 120.7.12010000.6 5. Retest the issue. 6. Migrate the solution as appropriate to other environments.",
+        "Last Update": "2021-09-21 00:00:00",
+        "check_list": {
+        "query1": ["Check the version of PurchasingOptionsVO.xml file", "SELECT * FROM fnd_attached_documents WHERE document_name = 'PurchasingOptionsVO.xml';"],
+        "query2": ["Verify file versions mentioned in the solution", "SELECT * FROM fnd_attached_documents WHERE document_name IN ('PurchasingOptionsVO.xml', 'PurchasingOptionsPG.xml', 'PoSystemParameterEOImpl.java', 'PurchasingOptionsVORowImpl.java');"],
+        "query3": ["Check the existence of ACCRUED_CODE_COMBINATION_ID and ORG_ID columns", "DESCRIBE PoSystemParameterEO;"],
+        "query4": ["Examine the contents of PurchasingOptionsVO.xml file", "SELECT document_text FROM fnd_attached_documents WHERE document_name = 'PurchasingOptionsVO.xml';"],
+        "query5": ["Verify the existence of the referenced bug", "SELECT * FROM fnd_bug_reports WHERE bug_number = '14608120';"]
+        },
+        "place_holder": ["List of placeholders needed for queries (if any)"]
+    },
+    
+    
+    "PLS-00394": {
+        "Module": "Purchase",
+        "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=453220430999719&id=2812197.1&displayIndex=14&_afrWindowMode=0&_adf.ctrl-state=ldhdgsjf7_1901",
+        "Applies To": "Oracle Purchasing - Version 12.2.9 and later\nInformation in this document applies to any platform.",
+        "Symptoms": "When attempting to compile package PO_REQUISITION_UPDATE_PVT body\nthe following error occurs.\n\nERROR\n\nPO_REQUISITION_UPDATE_PVT 1 PACKAGE BODY PLS-00394: wrong number of values in the INTO list of a FETCH statement\nPO_REQUISITION_UPDATE_PVT 2 PACKAGE BODY PL/SQL: SQL Statement ignored\n\n\nSTEPS TO REPRODUCE\n\n\nThe issue can be reproduced at will with the following steps:\n\n\n1. Compile PO_REQUISITION_UPDATE_PVT body using\n\nAlter package PO_REQUISITION_UPDATE_PVT compile body\n\n2. Getting above error",
+        "Cause": "There is a compilation issue with the PO_REQUISITION_UPDATE_PVT package on few Database versions\n \nThis is explained in the following bug:\nBug 33393968 - PO_REQUISITION_UPDATE_PVT PLS-00394: WRONG NUMBER OF VALUES IN THE INTO LIST OF",
+        "Solution": "To implement the solution, please execute the following steps:\n\n1. Download and review the readme and pre-requisites for Patch 33393968:R12.PO.D\n\n2. Ensure that you have taken a backup of your system before applying the recommended patch.\n\n3. Apply the patch in a test environment.\n\n4. Confirm the following file versions:\n  POXRQUPVTB.pls 120.0.12020000.9\n\n\nYou can use the commands like the following:\n  strings -a $PO_TOP/patch/115/sql/POXRQUPVTB.pls |grep '$Header'\n\n5. Retest the issue.\n\n6. Migrate the solution as appropriate to other environments.",
+        "Last Update": "2021-10-05 00:00:00",
+        "check_list": {
+        "query1": ["Check current version of PO_REQUISITION_UPDATE_PVT package", "SELECT object_name, object_type, status FROM all_objects WHERE object_name = 'PO_REQUISITION_UPDATE_PVT';"],
+        "query2": ["Retrieve definition of PO_REQUISITION_UPDATE_PVT package", "SELECT text FROM all_source WHERE name = 'PO_REQUISITION_UPDATE_PVT' AND type = 'PACKAGE';"],
+        "query3": ["Verify version of POXRQUPVTB.pls file", "strings -a $PO_TOP/patch/115/sql/POXRQUPVTB.pls | grep '$Header'"],
+        "query4": ["Check compilation errors in PO_REQUISITION_UPDATE_PVT package", "SHOW ERRORS PACKAGE BODY PO_REQUISITION_UPDATE_PVT;"],
+        "query5": ["Examine FETCH statement in PO_REQUISITION_UPDATE_PVT package body", "SELECT text FROM all_source WHERE name = 'PO_REQUISITION_UPDATE_PVT' AND type = 'PACKAGE BODY' AND text LIKE '%FETCH%';"],
+        "query6": ["Check if Patch 33393968 is applied", "SELECT patch_name, applied FROM dba_registry_sqlpatch WHERE patch_name = '33393968';"]
+        },
+        "place_holder": ["$PO_TOP"]
+    },
+    "FRM 40212": {
+        "Module": "Purchase",
+        "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=453449315440759&id=2083946.1&displayIndex=23&_afrWindowMode=0&_adf.ctrl-state=ldhdgsjf7_1950",
+        "Applies To": "Oracle Purchasing - Version 11.5.10.2 to 12.2.4 [Release 11.5 to 12.2]\nInformation in this document applies to any platform.",
+        "Symptoms": "On : 11.5.10.2 version, Purchase Order\n\nWhen attempting to create Release from BPA,\nthe following error occurs.\n\nERROR:\nFRM 40212 Invalid value for field PO_NUM\n\nSteps to reporduce:\n1. Create BPA and approve.\n2. Provide effective dates.\n3. Try to create Release. Error occurs.",
+        "Cause": "Multiple causes are available for this issue. \n\n\nThis is explained in the following bug:\nBug 5373119 : UNABLE ENTER EXPIRED BPA INTO POXPOERL FRM-40212 INVALID VALUE FOR PO_NUM\nBug 5108417 : RECEIVE INVALID VALUE FOR FIELD PO_NUM WHEN CREATING A NEW RELEASE FRM-40212",
+        "Solution": "To implement the solution, please execute the following steps:\n\n1. Verify whether this is Global BPA or Local BPA. If it is Global BPA Blanket Releases cannot be created. Only Standard Purchase Orders can be created.\n\nor\n\n2. Check the Effective Dates for the Blanket PO.\nQuery the Blanket PO in PO Summary and choose the OPEN button. \nClick the TERMS button and update the Effective Dates to date range within the current date. \n\nor\n\n\n3. Check the Expiration Date for Blanket PO lines.\nQuery the Blanket PO and either provide valid Expiration_Date or remove Expiration_Date for BPA lines.",
+        "Last Update": "2023-03-03 00:00:00",
+        "check_list": {
+        "query1": ["Check if Blanket Purchase Agreement (BPA) exists", "SELECT * FROM po_headers_all WHERE segment1 = '<BPA_NUMBER>';"],
+        "query2": ["Verify Effective Dates for the Blanket Purchase Order (BPA)", "SELECT segment1, effective_start_date, effective_end_date FROM po_headers_all WHERE segment1 = '<BPA_NUMBER>';"],
+        "query3": ["Check for Blanket Purchase Agreement (BPA) Expiration Dates", "SELECT bpa.segment1, bpal.line_id, bpal.expiration_date FROM po_bpa_lines_all bpal JOIN po_headers_all bpa ON bpal.po_header_id = bpa.po_header_id WHERE bpa.segment1 = '<BPA_NUMBER>';"],
+        "query4": ["Verify Purchase Order (PO) Approval Status for the Blanket Purchase Agreement (BPA)", "SELECT segment1, approval_status FROM po_headers_all WHERE segment1 = '<BPA_NUMBER>';"],
+        "query5": ["Check for Existing Releases for the Blanket Purchase Agreement (BPA)", "SELECT release_num, release_date FROM po_releases_all WHERE blanket_agreement_id = (SELECT po_header_id FROM po_headers_all WHERE segment1 = '<BPA_NUMBER>');"],
+        "query6": ["Verify Purchase Order (PO) Summary for the Blanket Purchase Agreement (BPA)", "SELECT segment1, po_header_id FROM po_headers_all WHERE segment1 = '<BPA_NUMBER>';"],
+        "query7": ["Check for Expired Blanket Purchase Agreement (BPA) Lines", "SELECT bpa.segment1, bpal.line_id, bpal.expiration_date FROM po_bpa_lines_all bpal JOIN po_headers_all bpa ON bpal.po_header_id = bpa.po_header_id WHERE bpa.segment1 = '<BPA_NUMBER>' AND bpal.expiration_date < SYSDATE;"]
+        },
+        
+        "place_holder": ["<BPA_NUMBER>"]
+    },
+    
+        "ORA-06510": {
+            "Module": "Purchase",
+            "URL": "https://support.oracle.com/epmos/faces/SearchDocDisplay?_adf.ctrl-state=ldhdgsjf7_1999&_afrLoop=454092920555291",
+            "Applies To": "Oracle Purchasing - Version 12.2.6 and later\nInformation in this document applies to any platform.",
+            "Symptoms": "Program POXPDOI: Import Price Catalogs is in error with message in log\n\n\n\nError:\n---Cause: FDPSTP failed due to ORA-06510: PL/SQL: unhandled user-defined exception\nORA-06512: at \"APPS.PO_PDOI_GRP\", line 398\nORA-06512: at line 1----\n\n\n\nSteps to Reproduce the Issue\n-----------------------------------\n\n1. Login to a PO Responsibility with Setup Access (PO Superuser, etc)\n2. populate PDOI (PO INTERFACE) tables with data as needed\n3. launch the import price catalogs program",
+            "Cause": "records in pdoi tables were in process\nwhen these records set to rejected then data process",
+            "Solution": "1. Set the records from IN PROCESS to REJECTED in PO_HEADERS_INTERFACE.\n\n2. SQL>UPDATE PO_HEADERS_INTERFACE SET PROCESS_CODE = 'REJECTED'\n\n3. Retry the Import Catalog Program",
+            "Last Update": "2023-04-20 00:00:00",
+            "check_list": {
+            "query1": ["Check records in PO_HEADERS_INTERFACE table that are in process", "SELECT * FROM PO_HEADERS_INTERFACE WHERE PROCESS_CODE = 'IN PROCESS';"],
+            "query2": ["Inspect the specific record causing the error in PO_HEADERS_INTERFACE", "SELECT * FROM PO_HEADERS_INTERFACE WHERE PROCESS_CODE = 'IN PROCESS' AND ROWNUM = 1;"],
+            "query3": ["Check for rejected records in PO_HEADERS_INTERFACE", "SELECT * FROM PO_HEADERS_INTERFACE WHERE PROCESS_CODE = 'REJECTED';"],
+            "query4": ["Review the error details in the log", "SELECT LOG_TEXT FROM FND_LOG_MESSAGES WHERE LOG_SEQUENCE = (SELECT MAX(LOG_SEQUENCE) FROM FND_LOG_MESSAGES);"],
+            "query5": ["Identify the package and line number where the error occurred", "SELECT OBJECT_NAME, LINE FROM ALL_ERRORS WHERE NAME = 'PO_PDOI_GRP';"],
+            "query6": ["Check for existing data related to the error", "SELECT * FROM APPS.PO_PDOI_GRP WHERE ROWNUM = 1;"],
+            "query7": ["Check the status of the Import Catalog Program", "SELECT * FROM FND_CONCURRENT_REQUESTS WHERE REQUEST_NAME = 'POXPDOI' ORDER BY SUBMIT_DATE DESC;"]
+            },
+            "place_holder": [
+            "PROCESS_CODE_IN_PROCESS",
+            "PROCESS_CODE_IN_PROCESS_SPECIFIC_RECORD_CONDITION",
+            "PROCESS_CODE_REJECTED_RECORDS_CONDITION",
+            "LOG_TEXT_ERROR_LOG",
+            "PACKAGE_NAME_ERROR_PACKAGE",
+            "EXISTING_DATA_CONDITION",
+            "IMPORT_PROGRAM_NAME_POXPDOI"
+            ]
+                        },
+                    
+    "ORA-01031": {
+        "Module": "Purchase",
+        "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=454278474872295&id=2760217.1&displayIndex=46&_afrWindowMode=0&_adf.ctrl-state=ldhdgsjf7_2464",
+        "Applies To": "Oracle Purchasing - Version 12.2.8 and later\nInformation in this document applies to any platform.",
+        "Symptoms": "E-Business Tax Issues\n\nWhen attempting to submit a requisition for approval,\nthe following error occurs.\n\nERROR\n-----------------------\n\nError Messages: Unexpected error occurred during Tax Calculation. Exception: 013 - ORA-0000: normal, successful completion. Please correct the problem or contact your System Administrator.\n\n\nAdditionally, the following error is captured in FND debug log:\n\nZX.PLSQL.ZX_TCM_PTP_PKG.GET_TAX_SUBSCRIBER.begin 2.00 .GET_TAX_SUBSCRIBER(-)\nZX.PLSQL.ZX_API_PUB.GET_DEFAULT_TAX_DET_ATTRIBS 6.00 ORA-01031: insufficient privileges\npo.plsql.PO_TAX_INTERFACE_PVT.CALCULATE_TAX_REQUISITION.140 1.00 get_default_tax_det_attribs returned with status U\n\n\nSTEPS\n-----------------------\nThe issue can be reproduced at will with the following steps:\n1. Navigate to purchasing responsibility\n2. Create an internal requisition\n3. Submit IR for approval",
+        "Cause": "A custom package was changing the value of the context \"MY_CXT\". Sometimes, customer packages changes the context",
+        "Solution": "To implement the solution, please execute the following steps:\n\n1. When the issue is happening, please run the following query to check the context:\n\nselect * from dba_context where namespace='MY_CTX';\n\nExpect result of this query to have:\n\n     PACKAGE = ZX_SECURITY\n     SCHEMA = APPS\n\n2. If the package returned is not as expected, run the following script to reset the context to resolve tax issue:\n\n$ZX_TOP/patch/115/sql/zxitsctx.sql\n\n3. Additionally, use the following query to examine the possible custom package returned in query of step 1 and make changes as needed to the custom package:\n\nselect object_name , owner,object_type , created\nfrom dba_objects\nwhere object_name = '&pkg_name';\n\nselect text from dba_source\nwhere name = '&pkg_name';\n\n4. Run the following query again:\n\nselect * from dba_context where namespace='MY_CTX';\n\nConfirm result of this query to have:\n\n     PACKAGE = ZX_SECURITY\n     SCHEMA = APPS\n\n5. Retest the issue. Tax should now calculate properly, and error ORA-01031: insufficient privileges no longer captured in FND debug\n\n6. Migrate the solution as appropriate to other environments.",
+        "Last Update": "2021-09-21 00:00:00",
+        "check_list": {
+        "query1": ["Check the context value during the issue", "SELECT * FROM dba_context WHERE namespace = 'MY_CTX';"],
+        "query2": ["Reset the context using the provided script", "@$ZX_TOP/patch/115/sql/zxitsctx.sql"],
+        "query3": ["Examine possible custom package returned in step 1", "SELECT object_name, owner, object_type, created FROM dba_objects WHERE object_name = '&pkg_name';", "SELECT text FROM dba_source WHERE name = '&pkg_name';"],
+        "query4": ["Run the context query again to confirm the reset", "SELECT * FROM dba_context WHERE namespace = 'MY_CTX';"],
+        "query5": ["Retest the issue", "Confirm that the tax calculation works properly, and the error ORA-01031: insufficient privileges is no longer captured in the FND debug log."],
+        "query6": ["Migrate the solution to other environments as needed."]
+        },
+        "place_holder": ["MY_CTX", "&pkg_name"]
+    },
+    
+        "ORA-01427": {
+            "Module": "Purchase",
+            "URL": "https://support.oracle.com/epmos/faces/SearchDocDisplay?_adf.ctrl-state=1064oqe1vu_187&_afrLoop=459346533874789",
+            "Applies To": "Oracle Purchasing - Version 12.2 and later\nInformation in this document applies to any platform.",
+            "Symptoms": "Updating Purchase Requisition Document Type ends with the below error, if the employee added to spot buy section, has more than one record in PER_ALL_PEOPLE_F table\n\nERROR\n## Detail 0 ##\njava.sql.SQLException: ORA-01427: single-row subquery returns more than one row\n\n...",
+            "Cause": "In PoDocTypeCategoriesVO,\n (SELECT FULL_NAME FROM PER_ALL_PEOPLE_F PER, FND_USER FU WHERE PER.PERSON_ID=FU.EMPLOYEE_ID\n AND FU.USER_ID=PoDocTypeCategoriesEO.USER_ID) EMPLOYEE_NAME\nreturning more than one record , when the associated person has more than one record in per_all_people_f.\n \nThis is explained in the following bug:\nBug 33139661 - SQLEXCEPTION: ORA-01427 ERROR WHILE UPDATING PURCHASE REQUISITION DOCUMENT TYPE",
+            "Solution": "To implement the solution, please execute the following steps:\n\n1. Download and review the readme and pre-requisites for Patch 33139661:R12.PO.D\n\nThe Patch is Controlled Release at the time, when this note is authored...",
+            "Last Update": "2021-11-06 00:00:00",
+            "check_list": {
+            "query1": ["Check the number of records in PER_ALL_PEOPLE_F for the affected employee", "SELECT COUNT(*) FROM PER_ALL_PEOPLE_F WHERE PERSON_ID = (SELECT EMPLOYEE_ID FROM FND_USER WHERE USER_ID = :user_id);"],
+            "query2": ["Identify the specific records in PER_ALL_PEOPLE_F for the affected employee", "SELECT * FROM PER_ALL_PEOPLE_F WHERE PERSON_ID = (SELECT EMPLOYEE_ID FROM FND_USER WHERE USER_ID = :user_id);"],
+            "query3": ["Check for duplicate records in PO_DOC_TYPE_CATEGORIES for the given DOCUMENT_TYPE_CODE, DOCUMENT_SUBTYPE, and ORG_ID", "SELECT * FROM PO_DOC_TYPE_CATEGORIES WHERE DOCUMENT_TYPE_CODE = :document_type_code AND DOCUMENT_SUBTYPE = :document_subtype AND ORG_ID = :org_id;"],
+            "query4": ["Identify the specific records causing the issue in PO_DOC_TYPE_CATEGORIES", "SELECT * FROM PO_DOC_TYPE_CATEGORIES WHERE DOCUMENT_TYPE_CODE = :document_type_code AND DOCUMENT_SUBTYPE = :document_subtype AND ORG_ID = :org_id;"],
+            "query5": ["Check the user details associated with the affected records in PO_DOC_TYPE_CATEGORIES", "SELECT USER_ID, (SELECT USER_NAME FROM FND_USER WHERE USER_ID = PO_DOC_TYPE_CATEGORIES.USER_ID) AS USER_NAME, (SELECT FULL_NAME FROM PER_ALL_PEOPLE_F PER, FND_USER FU WHERE PER.PERSON_ID = FU.EMPLOYEE_ID AND FU.USER_ID = PO_DOC_TYPE_CATEGORIES.USER_ID) AS EMPLOYEE_NAME FROM PO_DOC_TYPE_CATEGORIES WHERE DOCUMENT_TYPE_CODE = :document_type_code AND DOCUMENT_SUBTYPE = :document_subtype AND ORG_ID = :org_id;"]
+            },
+            "place_holder": [":user_id", ":document_type_code", ":document_subtype", ":org_id"]
+        },
+
+        
+            "ORA-01086": {
+                "Module": "Purchase",
+                "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=454643767603946&id=2751204.1&displayIndex=57&_afrWindowMode=0&_adf.ctrl-state=ldhdgsjf7_2562",
+                "Applies To": "Oracle Purchasing - Version 12.1.3 and later\nInformation in this document applies to any platform.",
+                "Symptoms": "Reschedule Requisitions Program completed in error with the following message:\n\nERROR\n------------------\n\nPO_RSR_ERROR\nORACLE Error Occurred.\nORA-01086: savepoint 'CONVERTINTOSOCHANGE_SP' never established in thi (1086).",
+                "Cause": "This is a defect. \nSave point convertintosochange_sp in procedure ConvertIntoSOChange is not properly placed\n\nThis is explained in the following bug:\nBug 29958202 : POXRSR: RESCHEDULE REQUISITIONS ORA-01086: SAVEPOINT 'CONVERTINTOSOCHANGE_SP'",
+                "Solution": "To implement the solution, please execute the following steps:\n\n1. Download and review the readme and pre-requisites for\n\nR12.1.3: Patch 29958202:R12.PO.B - This patch fixes the issue of reschedule requisition program failing with save point related error\n\nR12.2:  Patch 30846893:R12.PO.D- This patch fixes the issue of inactive buyer notification is going to wrong manager when performing requisition change order\n\n2. Ensure that you have taken a backup of your system before applying the recommended patch.\n\n3. Apply the patch in a test environment.\n\n4. Confirm the following file versions:\n\n  R12.1.3: POXVRCWB.pls 120.65.12010000.83\n\n  R12.2: POXVRCWB.pls 120.91.12020000.45\n\n5. Retest the issue.\n\n6. Migrate the solution as appropriate to other environments.",
+                "Last Update": "2023-10-04 00:00:00",
+                "check_list": {
+                "query1": ["Check for existing savepoints", "SELECT * FROM V$SAVEPOINT;"],
+                "query2": ["Check for the specific savepoint mentioned in the error", "SELECT * FROM V$SAVEPOINT WHERE NAME = 'CONVERTINTOSOCHANGE_SP';"],
+                "query3": ["Check for the presence of the mentioned procedure", "SELECT * FROM DBA_PROCEDURES WHERE OBJECT_NAME = 'ConvertIntoSOChange';"],
+                "query4": ["Check if the procedure has the mentioned savepoint", "SELECT * FROM DBA_PROCEDURES WHERE OBJECT_NAME = 'ConvertIntoSOChange' AND OBJECT_TYPE = 'PROCEDURE';\nSELECT * FROM DBA_SOURCE WHERE NAME = 'ConvertIntoSOChange' AND TYPE = 'PROCEDURE' AND UPPER(TEXT) LIKE '%SAVEPOINT%CONVERTINTOSOCHANGE_SP%';"],
+                "query5": ["Review the error stack for more details", "SELECT * FROM DBA_ERRORS WHERE NAME = 'ConvertIntoSOChange' AND TYPE = 'PROCEDURE';"],
+                "query6": ["Check for the presence of the bug fix", "SELECT * FROM DBA_REGISTRY_HISTORY WHERE ACTION_TIME >= TO_DATE('2023-10-04', 'YYYY-MM-DD');"],
+                "query7": ["Review applied patches", "SELECT * FROM DBA_REGISTRY_SQLPATCH;"]
+                },
+                "place_holder": ["CONVERTINTOSOCHANGE_SP", "2023-10-04"]
+            },
+                "ORA-20110": {
+                  "Module": "Purchase",
+                  "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=454843102144932&id=2254967.1&displayIndex=59&_afrWindowMode=0&_adf.ctrl-state=ldhdgsjf7_2611",
+                  "Applies To": "Oracle Purchasing - Version 12.1.3 and later\nInformation in this document applies to any platform.",
+                  "Symptoms": "On : 12.1.3 version, Approvals - Req, PO\n\nWhen attempting to use multiple chains of authority while approving,\nthe following error occurs.\n\nERROR\n-----------------------\nThe procedure getNextPosition could not find parent position for : HR Positions: XYZ",
+                  "Cause": "The issue is caused by the following setup:\n\nNo Rule is getting applied because wrong condition is being used. The Attribute is returning Y and/or N where as the condition is based on Yes and No.\n \nNote:AME Rule will be applicable only if all the conditions are meet. In the above the attribute CMG_GCPO is returning Y where as you are checking Yes or No. Same with CMG_ARCHPO.\n\nThe condition is checking for {Yes} and {No} where as the SQL used in the attribute is returning 'Y' and 'N', so the condition is never being true. Hence it was not applying any rule, there by not generating any approvers. Making the PO auto approved.",
+                  "Solution": "To implement the solution, please execute the following steps:\n\n1. Go into the responsibility: 'Approval Management Business Analyst'\n\n2. Click on Setup Icon for 'Purchase Order Approval'\n\n3. Update Attributes to make sure it returns value when the values are set to NULL\n\n\n\n4. Add 4 new conditions:\n  CMG_GCPO = Y\n  CMG_GCPO = N\n\n  CMG_ARCHPO = Y\n  CMG_ARCHPO = N\n\n5. Update the rules to use this above condition rather then {Yes} and {No}\n\n6. Perform a Real-time transaction test\n\n7. Retest the issue.\n\n8. Migrate the solution as appropriate to other environments.",
+                  "Last Update": "2022-02-02 00:00:00",
+                  "check_list": {
+                    "query1": ["Check AME Rules and Attributes", "SELECT * FROM fnd_ame_rules WHERE rule_name = 'YourRuleName';"],
+                    "query2": ["Verify Conditions and Values", "SELECT * FROM fnd_ame_conditions WHERE rule_id = (SELECT rule_id FROM fnd_ame_rules WHERE rule_name = 'YourRuleName');"],
+                    "query3": ["Check Attribute Values", "SELECT * FROM fnd_ame_values WHERE attribute_id IN (SELECT attribute_id FROM fnd_ame_attributes WHERE attribute_name IN ('CMG_GCPO', 'CMG_ARCHPO'));"],
+                    "query4": ["Inspect Workflow Approval Process", "SELECT * FROM wf_item_attributes WHERE item_type = 'POAPPRV' AND item_key = 'YourPOKey';"],
+                    "query5": ["Review Position Hierarchy", "SELECT * FROM hr_all_positions WHERE position_name = 'YourPositionName';"],
+                    "query6": ["Check Approval Transaction Data", "SELECT * FROM po_headers_all WHERE segment1 = 'YourPONumber';"],
+                    "query7": ["Validate SQL Used in Attribute", "Inspect the SQL used in the attribute 'CMG_GCPO' and 'CMG_ARCHPO' mentioned in the error, and ensure it returns 'Y' and 'N'."]
+                  },
+                  "place_holder": [
+                    "YourRuleName",
+                    "YourRuleID",
+                    "YourPOKey",
+                    "YourPositionName",
+                    "YourPONumber",
+                    "YourPOHeaderID"
+                  ]
+                }
+,
+
+    "APP-PO-14090": {
+      "Module": "Purchase",
+      "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=455071307388913&id=2083941.1&displayIndex=62&_afrWindowMode=0&_adf.ctrl-state=ldhdgsjf7_2660",
+      "Applies To": "Oracle Purchasing - Version 12.2.3 and later\nInformation in this document applies to any platform.",
+      "Symptoms": "On : 12.2.3 version, Purchase Order\n\nWhen attempting to autocreate requisition into BPA release the following error occurs.\n\nERROR\n-----------------------\nat least one of the selected requisition lines does not match the purchase order currency.\nAPP-PO-14090: Document was not created:\n\npossible causes:\n\n1) an exception occurred in the PO Account Generator workflow during the document creation process.\n2) Some other error occurred during the document creation process.\n\n\nSTEPS\n-----------------------\nThe issue can be reproduced at will with the following steps:\n1. query requisition A Line 1 and 2 in autocreate form\n2. create blanket release, click automatic\n3. BPA B , release 38, currency: EUR, source: default, click create",
+      "Cause": "BPA line expired date is earlier than the requisition line need by date",
+      "Solution": "Please implement the following solution in TEST instance:\n\n\n1. Modify the BPA line expire date to a valid value, save the change and approve the BPA.\n2. Autocreate requisitions into BPA release to retest.",
+      "Last Update": "2023-03-03 00:00:00",
+      "check_list": {
+        "query1": ["Check BPA Line Details", "SELECT * FROM po_bpa_lines WHERE bpa_line_id = <BPA_LINE_ID>;"],
+        "query2": ["Check Requisition Line Details", "SELECT * FROM po_requisition_lines_all WHERE requisition_line_id IN (<REQUISITION_LINE_ID_1>, <REQUISITION_LINE_ID_2>);"],
+        "query3": ["Check Purchase Order Details", "SELECT * FROM po_headers_all WHERE segment1 = '<PURCHASE_ORDER_NUMBER>';"],
+        "query4": ["Check BPA Header Details", "SELECT * FROM po_bpa_headers WHERE bpa_header_id = <BPA_HEADER_ID>;"],
+        "query5": ["Check for Expired BPA Lines", "SELECT * FROM po_bpa_lines WHERE bpa_header_id = <BPA_HEADER_ID> AND expiration_date < SYSDATE;"],
+        "query6": ["Check for Workflow Errors", "SELECT * FROM wf_notifications WHERE item_key = '<PURCHASE_ORDER_NUMBER>' AND notification_type = 'PO_DOC_CREATE_ERROR';"]
+      },
+      "place_holder": ["<BPA_LINE_ID>", "<REQUISITION_LINE_ID_1>", "<REQUISITION_LINE_ID_2>", "<PURCHASE_ORDER_NUMBER>", "<BPA_HEADER_ID>"]
+    },
+        "APP-FND-02901": {
+          "Module": "Order Management",
+          "URL": "https://support.oracle.com/epmos/faces/SearchDocDisplay?_adf.ctrl-state=usq2h7rk9_151&_afrLoop=455169787925236",
+          "Applies To": "Oracle Order Management - Version 12.1 and later",
+          "Symptoms": "On 12.1\nWhen attempting to open Order Management Forms like Order Organizer, Transaction Type form,\nthe following error occurs.\n\nERROR\nOracle error -20001: ORA-20001: APP-FND-02901: You do not have access privilege to any operating unit. Please check if your profile option MO: Security Profile includes any operating unit or the profile option MO: Operating Unit is set. has been detected in MO_GLOBAL.INIT.\n\nSTEPS\nThe issue can be reproduced at will with the following steps:\n1. Order Management responsibility\n2. Open Order Organizer Form , Transaction Type Form\n3. See the error\n\nFACTS\n\nProfiles MO: Security Profile , MO: Default Operating Unit , MO: Operating Unit have been set for the OM Responsibility in question.",
+          "Cause": "Security List Maintenance program has not been run after setting up a new security profile.\n\nThis issue is described in Document 393634.1 R12: How To Setup Multi Org Access Control\n(MOAC) for Order Management?\n\nThe Note says:\nIf you created a new security profile , you MUST run the concurrent program 'Security List\nMaintenance' or the multiple operating units will not appear in the LOV in the OM forms.",
+          "Solution": "To implement the solution, please execute the following steps:\n\n1. Run the concurrent program 'Security List Maintenance'\n\nNavigation: HRMS Management > HRMS Manager > Processes & Reports > Submit Process & Report > Security List Maintenance\n\n2. Retest the issue.\n\n3. Migrate the solution as appropriate to other environments.",
+          "Last Update": "nothing",
+          "check_list": {
+            "query1": ["Check Profile Option Settings", "SELECT PROFILE_OPTION_NAME, PROFILE_OPTION_VALUE FROM FND_PROFILE_OPTIONS WHERE PROFILE_OPTION_NAME IN ('MO: Security Profile', 'MO: Default Operating Unit', 'MO: Operating Unit');"],
+            "query2": ["Check Security Profile", "SELECT SECURITY_PROFILE_NAME, ORG_ID FROM MO_SECURITY_PROFILES;"],
+            "query3": ["Check Operating Unit Setup", "SELECT ORGANIZATION_ID, ORGANIZATION_CODE, NAME FROM HR_ALL_ORGANIZATIONS WHERE ORGANIZATION_ID IN (SELECT ORG_ID FROM MO_SECURITY_PROFILES);"],
+            "query4": ["Check Concurrent Program Execution", "SELECT REQUEST_ID, CONCURRENT_PROGRAM_ID, PHASE_CODE, STATUS_CODE, TO_CHAR(CREATION_DATE, 'DD-MON-YYYY HH24:MI:SS') AS CREATION_DATE FROM FND_CONCURRENT_REQUESTS WHERE CONCURRENT_PROGRAM_ID IN (SELECT CONCURRENT_PROGRAM_ID FROM FND_CONCURRENT_PROGRAMS WHERE CONCURRENT_PROGRAM_NAME = 'Security List Maintenance') ORDER BY CREATION_DATE DESC;"],
+            "query5": ["Check for the Latest Error Details", "SELECT REQUEST_ID, LOG_FILE_NAME, OUTPUT_FILE_NAME FROM FND_CONCURRENT_REQUESTS WHERE REQUEST_ID = <REQUEST_ID_FROM_PREVIOUS_QUERY>;"]
+          },
+          "place_holder": ["<REQUEST_ID_FROM_PREVIOUS_QUERY>"]
+        }
+      ,
+        "APP-FND-01206": {
+          "Module": "Order Management",
+          "URL": "https://support.oracle.com/epmos/faces/SearchDocDisplay?_adf.ctrl-state=usq2h7rk9_151&_afrLoop=455723362183377",
+          "Applies To": "Oracle Order Management - Version 12.2.10 and later",
+          "Symptoms": "On : 12.2.10 version, Transaction Entry\n\nGetting below error while saving changes to Order Management documents\n\nERROR\n-----------------------\nAPP-FND- 01206: This record already exists. You entered a duplicate value or sequence of values that must be unique for every record.\n\nSTEPS\n-----------------------\nThe issue can be reproduced at will with the following steps:\n\n\n1. Log into Oracle Applications\n\n2. Go to Order Management Super user responsibility\n\n3. Setup->Orders->Attachments-> Documents\n\n4.Select existing category -> Additional Rules -> Order header -> Sequence 10, Customer -> Select customer from LoV and Save.\n\n5. Above error is populated while saving",
+          "Cause": "Data corruption with rule_element_id on table oe_attachment_rule_elements is higher than the current value of the sequence OE_ATTACHMENT_RULE_ELEMENTS_S in 12..2.10 instance.\n\nIssue does not happen in 12.1.3 instance where rule_element_id is lower than the current value of the sequence OE_ATTACHMENT_RULE_ELEMENTS_S.\n \nIssue described in Bug 35322620 - UNABLE TO SAVE CHANGES TO ORDER MANAGEMENT DOCUMENTS\n \n\nBelow SQL identifies all such problematic lines:\n\nSQL01)\nSELECT MAX(rule_element_id)\nFROM oe_attachment_rule_elements;\n\n\nSQL02)\nSELECT * FROM dba_sequences\nWHERE sequence_name = 'OE_ATTACHMENT_RULE_ELEMENTS_S';",
+          "Solution": "Please log a Service Request with Oracle Order Management Product, providing\n\nScreenshot of Error.\nFND log captured for issue testcase as per Doc ID 1610072.1\nOutputs of SQL01 and SQL02",
+          "Last Update": "nothing",
+          "check_list": {
+            "query1": ["Check the maximum value of rule_element_id", "SELECT MAX(rule_element_id) FROM oe_attachment_rule_elements;"],
+            "query2": ["Verify the current value of the sequence OE_ATTACHMENT_RULE_ELEMENTS_S", "SELECT * FROM dba_sequences WHERE sequence_name = 'OE_ATTACHMENT_RULE_ELEMENTS_S';"]
+          },
+          "place_holder": ["rule_element_id_value", "OE_ATTACHMENT_RULE_ELEMENTS_S_value", "..."]
+        }
+,
+    "Error ORA-04062": {
+      "Module": "Order Management",
+      "URL": "https://support.oracle.com/epmos/faces/SearchDocDisplay?_adf.ctrl-state=usq2h7rk9_151&_afrLoop=456176192992474",
+      "Applies To": "Oracle Order Management - Version 12.2.5 to 12.2.5 [Release 12.2]",
+      "Symptoms": "Error ORA-04062 - while querying any sales agreement or while trying to add a line in existing sales agreement in \"Sales Agreement\" form.\n\n\nERROR\n-----------------------\nORA-04062:  of has been changed\nORA-01403: no data found\n\nSTEPS\n-----------------------\nThe issue can be reproduced at will with the following steps:\n1. Login to an Order Management responsibility\n2. Navigate to Sales Agreements > Sales Agreements\n3. on the Sales Agreement form, query any existing Sales Agreement Number\n4. Observe the error",
+      "Cause": "The error ORA-04062: of has been changed is for some of the referenced api is complied and that made the library or form reference signature mismatch.\n \nThis has been explained in Bug - 33506693",
+      "Solution": "Please perform the following action plan in a test instance where the issue is reproducible.\n\n1. login to the database using apps user\n2. Drop package apps.OE_BLANKET_FORM_CONTROL;\n3. cd $ONT_TOP/patch/115/sql/\n    sqlplus APPS/ @OEXFBSOS.pls\n    sqlplus APPS/ @OEXFBSOB.pls\n\n4. Check the status of above created package and make sure its in valid state using the below SQL\n\n    Select owner,object_name, object_type,status from all_objects where\n    object_name='OE_BLANKET_FORM_CONTROL';\n\n5. Regenerate Forms and libraries for ONT product ( Refer MOS Doc ID 2284658.1 for details)",
+      "Last Update": "nothing",
+      "check_list": {
+        "query1": ["Check the status of the referenced API", "SELECT object_name, status FROM all_objects WHERE object_name = 'OE_BLANKET_FORM_CONTROL';"],
+        "query2": ["Check for the existence of the package", "SELECT object_name, object_type FROM all_objects WHERE object_name = 'OE_BLANKET_FORM_CONTROL';"],
+        "query3": ["Check the dependencies of the package", "SELECT * FROM all_dependencies WHERE name = 'OE_BLANKET_FORM_CONTROL';"],
+        "query4": ["Verify the compilation status of the package", "SELECT object_name, status, last_ddl_time FROM all_objects WHERE object_name = 'OE_BLANKET_FORM_CONTROL';"],
+        "query5": ["Check for errors during the compilation of the package", "SELECT * FROM all_errors WHERE name = 'OE_BLANKET_FORM_CONTROL';"],
+        "query6": ["Retrieve the details of the sales agreements causing the error", "SELECT * FROM <sales_agreement_table> WHERE <condition_to_identify_problematic_sales_agreements>;"],
+        "query7": ["Check if the referenced API is complied", "SELECT * FROM all_procedures WHERE object_name = 'OE_BLANKET_FORM_CONTROL';"],
+        "query8": ["Verify the existing state of the package", "SELECT owner, object_name, object_type, status FROM all_objects WHERE object_name = 'OE_BLANKET_FORM_CONTROL';"]
+      },
+      "place_holder": [
+        "<sales_agreement_table>",
+        "<condition_to_identify_problematic_sales_agreements>"
+      ]
+    }
+  ,
+    "ORA-28110": {
+      "Module": "Order Management",
+      "URL": "https://support.oracle.com/epmos/faces/SearchDocDisplay?_adf.ctrl-state=usq2h7rk9_151&_afrLoop=456578621431074",
+      "Applies To": "Oracle Order Management - Version 12.1.3 and later\nOracle E-Business Suite Technology Stack - Version 12.0 and later",
+      "Symptoms": "On : 12.1.3 version, Transaction Entry\n\nAn error is occurring when attempting to process an RMA Outbound using third party software call as seen below:\n\nCALL APPS.wwbts_returns_outbound_pkg.wwont_returns_outbound(:errBuff, :retCode, :p_ont_return, :invNumber)} and \u2018500\u2019 value for invNumber parameter\n\nERROR\n-----------------------\nORA-20001: An error was encountered - 1 -ERROR- - exception occured - ORA-20001: SQL_PLSQL_ERROR: N, ROUTINE, HR_SIGNON.INITIALIZE_HR_SECURITY, N, ERRNO, -28110, N, REASON, ORA-28110: policy function or package APPS.FND_PROFILE_OPTION_VALUES= has error\n\n\nSTEPS\n-----------------------\nThe issue is occurring when invoking a third party package.",
+      "Cause": "If a policy function has compilation errors or does not exist, DBMS_RLS.ADD_POLICY will successfully complete but SELECT or DML will result in ORA-28110: policy function or package <schema.name> has error.",
+      "Solution": "Please recompile the (packaged) function with the following statement:\n\nCREATE OR REPLACE FUNCTION | PACKAGE or ALTER FUNCTION | PACKAGE COMPILE [BODY]",
+      "Last Update": "nothing",
+      "check_list": {
+        "query1": ["Check if the policy function or package exists", "SELECT OBJECT_NAME, OBJECT_TYPE FROM ALL_OBJECTS WHERE OBJECT_NAME = '<PLACEHOLDER>' AND OBJECT_TYPE IN ('FUNCTION', 'PACKAGE')"],
+        "query2": ["Check for compilation errors in the policy function or package", "SELECT TEXT FROM ALL_SOURCE WHERE NAME = '<PLACEHOLDER>' ORDER BY LINE"],
+        "query3": ["Recompile the policy function or package", "ALTER FUNCTION <PLACEHOLDER> COMPILE; -- OR CREATE OR REPLACE FUNCTION <PLACEHOLDER> COMPILE;"],
+        "query4": ["Verify successful compilation", "SELECT TEXT FROM ALL_SOURCE WHERE NAME = '<PLACEHOLDER>' ORDER BY LINE"]
+      },
+      "place_holder": ["FND_PROFILE_OPTION_VALUES"]
+    }
+  ,"ORA-01843": {
+    "Module": "Order Management",
+    "URL": "https://support.oracle.com/epmos/faces/SearchDocDisplay?_adf.ctrl-state=usq2h7rk9_151&_afrLoop=457311977233822",
+    "Applies To": "Oracle Order Management - Version 12.2.9 and later",
+    "Symptoms": "On : 12.2.9 version, ECC Order Management\n\nWhen attempting to Full Import,\nthe following error occurs.\n\nERROR\n-----------------------\nORA-01843: not a valid month\n\n\nSTEPS\n-----------------------\nThe issue can be reproduced at will with the following steps:\n1. Enterprise Command Center Developer\n2. Data Load Submission\n3. Full Load for Order Management",
+    "Cause": "The cause of the issue is invalid date in Descriptive Flexfield segments\nThis issue is described in Bug 33774089 - OM COMMAND CENTER DATA LOAD ERROR ORA-01843: NOT A VALID MONTH",
+    "Solution": "To implement the solution, please execute the following steps:\n\n1. Do either one of these options:\n\n#1\n1. Go into the responsibility: Order Management responsibility\n2. Append OE_HEADER_ATTRIBUTES, OE_LINE_ATTRIBUTES to the profile FND: ECC Disable Descriptive Flexfield value\n\n#2\nFix date values in DFF segments.\nThe date should have the format of 'YYYY/MM/DD HH:MM:SS\"\n\n2. Retest the issue.\n\n3. Migrate the solution as appropriate to other environments.",
+    "Last Update": "nothing",
+    "check_list": {
+      "query1": [
+        "Identify Records with Invalid Date Values",
+        "SELECT * FROM your_table WHERE TO_DATE(date_column, 'YYYY/MM/DD HH24:MI:SS', 'NLS_DATE_LANGUAGE = AMERICAN') IS NULL;"
+      ],
+      "query2": [
+        "List Distinct Invalid Date Values",
+        "SELECT DISTINCT date_column FROM your_table WHERE TO_DATE(date_column, 'YYYY/MM/DD HH24:MI:SS', 'NLS_DATE_LANGUAGE = AMERICAN') IS NULL;"
+      ],
+      "query3": [
+        "Check Descriptive Flexfield Segments for Invalid Dates",
+        "SELECT * FROM your_dff_table WHERE segment_name IN ('OE_HEADER_ATTRIBUTES', 'OE_LINE_ATTRIBUTES') AND TO_DATE(segment_value, 'YYYY/MM/DD HH24:MI:SS', 'NLS_DATE_LANGUAGE = AMERICAN') IS NULL;"
+      ],
+      "query4": [
+        "Find Records Related to Bug 33774089",
+        "SELECT * FROM your_table WHERE bug_id = '33774089';"
+      ],
+      "query5": [
+        "Verify Descriptive Flexfield Configuration",
+        "SELECT * FROM fnd_flex_validation_tables WHERE flex_value_set_name LIKE '%Order Management%';"
+      ],
+      "query6": [
+        "Check the Profile Option Values",
+        "SELECT profile_option_name, profile_option_value FROM fnd_profile_option_values WHERE profile_option_name = 'FND: ECC Disable Descriptive Flexfield value';"
+      ]
+    },
+    "place_holder": [
+      "your_table",
+      "date_column",
+      "your_dff_table",
+      "bug_id"
+    ]
+  },
+    "APP-ONT-251015": {
+      "Module": "Order Management",
+      "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_adf.ctrl-state=usq2h7rk9_151&id=1214667.1&_afrLoop=457957893066736",
+      "Applies To": "Oracle Order Management - Version 12.1.1 and later",
+      "Symptoms": "After booking and partially reserving an Order line, status becomes 'SUPPLY PARTIAL'.\nThis can be only progressed by running AutoCreate Final Assembly Orders to create WIP job for remaining item.\nThis cannot be progressed by doing Actions > Progress Order.",
+      "Cause": "nothing",
+      "Solution": "This is the expected behavior. Since the Order line is reserved partially, the line has moved to Ship_line notified status.\nNow any of the following step should be used to progress the line.\n\n1. Run AutoCreate Final Assembly Orders to create WIP job for remaining item.\n\nor\n\n2. Ship the quantity that being reserved. After Interface Trip Stop is run, the line will\nsplit and the new line that is not yet shipped will be at Supply Eligible\nstatus which can be progressed from Sales Order Form.",
+      "Last Update": "nothing",
+      "check_list": {
+        "query1": ["Check Order Line Status and Reservation Information", "SELECT ooh.order_number, ool.line_id, ool.line_number, ool.inventory_item_id, ool.order_quantity, ool.shipped_quantity, ool.reservation_quantity, ool.line_status FROM oe_order_headers_all ooh JOIN oe_order_lines_all ool ON ooh.header_id = ool.header_id WHERE ooh.order_number = '<Order_Number>';"],
+        "query2": ["Check for Partially Reserved Lines", "SELECT ool.line_id, ool.line_number, ool.inventory_item_id, ool.order_quantity, ool.reservation_quantity, ool.line_status FROM oe_order_lines_all ool WHERE ool.line_status = 'SUPPLY PARTIAL';"],
+        "query3": ["Check AutoCreate Final Assembly Orders (AFCO) Information", "SELECT ool.line_id, ool.line_number, ool.inventory_item_id, ool.order_quantity, ool.reservation_quantity, ool.line_status, aia.wip_entity_id FROM oe_order_lines_all ool JOIN wip_entities aia ON ool.line_id = aia.sales_order_line_id WHERE ool.line_status = 'SUPPLY PARTIAL';"],
+        "query4": ["Check Interface Trip Stop Information", "SELECT ool.line_id, ool.line_number, ool.inventory_item_id, ool.order_quantity, ool.reservation_quantity, ool.line_status, ool.ship_from_org_id FROM oe_order_lines_all ool JOIN wsh_delivery_details wdd ON ool.line_id = wdd.source_line_id WHERE ool.line_status = 'SUPPLY PARTIAL';"]
+      },
+      "place_holder": ["<Order_Number>"]
+    }
+  ,
+    "APP-ONT-251736": {
+      "Module": "Order Management",
+      "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=458368114535512&parent=EXTERNAL_SEARCH&sourceId=PROBLEM&id=1321654.1&_afrWindowMode=0&_adf.ctrl-state=usq2h7rk9_1418",
+      "Applies To": "Oracle Order Management - Version 12.0 to 12.1.3 [Release 12.0 to 12.1]",
+      "Symptoms": "Receive error opening the sales order form:\nAPP-ONT-251736: Defaulting will occur after the Operating Unit is specified\n\nSteps to reproduce the issue:\n1. Navigate to Order Management Super User -> Order,Returns\n2.  Open Sales Order form\n3. Noticed the error\nAPP-ONT-251736: Defaulting will occur after the Operating Unit is specified",
+      "Cause": "Operating Unit is not defaulted to the sales order form.\n\nIf the OU is not defaulted, that message will show up. It is the expected behavior.",
+      "Solution": "Verify set up of profiles for MO: Security Profile and MO: Default operating unit. Make sure your defaulting operating unit is present in your security profile.\n\nPlease refer to MOAC Note 393634.1 and Order Management Implementation guide for setup details.",
+      "Last Update": "2023-06-30 00:00:00",
+      "check_list": {
+        "query1": ["Check MO: Security Profile", "SELECT PROFILE_NAME, ORG_ID FROM MO_SECURITY_PROFILES WHERE PROFILE_NAME = 'Your_Security_Profile';"],
+        "query2": ["Check MO: Default Operating Unit", "SELECT PROFILE_OPTION_NAME, PROFILE_OPTION_VALUE FROM FND_PROFILE_OPTIONS WHERE PROFILE_OPTION_NAME = 'MO: Operating Unit';"],
+        "query3": ["Verify Security Profile Assignment", "SELECT * FROM MO_SECURITY_PROFILE_ASSIGNMENTS WHERE SECURITY_PROFILE_NAME = 'Your_Security_Profile';"],
+        "query4": ["Check Operating Unit Defaulting", "SELECT ORGANIZATION_ID, ORGANIZATION_CODE FROM HR_OPERATING_UNITS WHERE ORGANIZATION_CODE = 'Your_Operating_Unit_Code';"],
+        "query5": ["Verify MOAC Setup", "SELECT PROFILE_OPTION_NAME, PROFILE_OPTION_VALUE FROM FND_PROFILE_OPTIONS WHERE PROFILE_OPTION_NAME IN ('MO: Security Profile', 'MO: Operating Unit');"],
+        "query6": ["Check Responsibility Setup", "SELECT RESPONSIBILITY_NAME, APPLICATION_ID, ORG_ID FROM FND_RESPONSIBILITY_V WHERE RESPONSIBILITY_NAME = 'Your_Order_Management_Responsibility';"]
+      },
+      "place_holder": ["Your_Security_Profile", "Your_Operating_Unit_Code", "Your_Order_Management_Responsibility"]
+    },
+
+        "APP-ONT-251090": {
+          "Module": "Order Management",
+          "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=458705331281699&parent=EXTERNAL_SEARCH&sourceId=HOWTO&id=434393.1&_afrWindowMode=0&_adf.ctrl-state=usq2h7rk9_1508",
+          "Applies To": "Oracle Order Management - Version 11.5.10.0 to 11.5.10.3 [Release 11.5.10]",
+          "Symptoms": "Getting following error in Order Import Corrections Form and does not know how to clear it.  When clicking on ERRORS button the query does not return any records.  How does one clear this error?\n\nNote\nAPP-ONT-251090: Order failed with errors.\n\nNote\nError You are trying to insert an existing order or update an order that does not exist. Please enter a correct operation code.",
+          "Cause": "nothing",
+          "Solution": "For Orig_Sys_Document_Ref, not existing in Order management base tables (with any Sales Order - XML as source), the operation code in Corrections screen (Iface tables) should be CREATE, whereas for the one existing with any created Sales Order, it should be UPDATE.\n\nChange the operation code in Corrections form to either Create or Update.",
+          "Last Update": "nothing",
+          "check_list": {
+            "query1": ["Check for Existing Orders with the Same Orig_Sys_Document_Ref:", "SELECT * FROM oe_order_headers_all WHERE orig_sys_document_ref = ?"],
+            "query2": ["Check Interface Tables for Orders with the Error:", "SELECT * FROM oe_headers_iface_all WHERE orig_sys_document_ref = ?"],
+            "query3": ["Check for Duplicate Orders in Interface Tables:", "SELECT orig_sys_document_ref, COUNT(*) FROM oe_headers_iface_all GROUP BY orig_sys_document_ref HAVING COUNT(*) > 1"],
+            "query4": ["Check for Existing Orders with the Error in Corrections Form:", "SELECT * FROM oe_order_headers_all WHERE order_number IN (SELECT order_number FROM oe_headers_iface_all WHERE orig_sys_document_ref = ?)"],
+            "query5": ["Check Corrections Form Operation Codes:", "SELECT orig_sys_document_ref, operation_code FROM oe_headers_iface_all WHERE orig_sys_document_ref = ?"]
+          },
+          "place_holder": ["'APP-ONT-251090'"]
+        }
+,
+    "APP-ONT-251013": {
+      "Module": "Order Management",
+      "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=459602927991365&parent=EXTERNAL_SEARCH&sourceId=PROBLEM&id=2354347.1&_afrWindowMode=0&_adf.ctrl-state=usq2h7rk9_1655",
+      "Applies To": "Oracle Order Management - Version 12.2.6 and later",
+      "Symptoms": "On : 12.2.6 version, Transaction Booking\n\nWhen attempting to progress sales order...",
+      "Cause": "Observed a large number of sales order where the lines are stuck in 'Scheduled' status...",
+      "Solution": "To implement the solution, please execute the following steps:\n\n1. Ensure that you have taken a backup of your system before applying the recommended solution.\n\n2. Run the following scripts in a TEST environment first:\n  Script 1 -- > (Set_ShipLine_Notified.sql') to change the line status from 'Scheduled' to 'Awaiting Shipping'.\n  Script 2 --> (Close_inv_lines.sql) to change the line status from \"Interfaced to Receivables\".\n\n3. Once the scripts complete, confirm that the data is corrected.\nYou can use the following SQL to confirm:\n\n4. If you are satisfied with the results, issue a commit.\n\n5. Confirm that the data is corrected when viewed in the Oracle Applications.\n\nYou can use the following steps:\na. Run the script<close_inv_lines.sql> by providing the line_id:xxxxxx as an input while prompting at run time.\nb. Verify the status of the line. If it is not closed, Provide the latest HTMomse file along with debug file generated.\nc. Run the script<Set_ShipLine_Notified.sql'> by providing the line_id:xxxxxx as an input while prompting at run time and then ship the item, progress the line til closure.\n\n6. If you are satisfied that the issue is resolved, migrate the solution as appropriate to other environments.",
+      "Last Update": "nothing",
+      "check_list": {
+        "query1": [
+          "Identify Orders with Stuck Lines",
+          "SELECT DISTINCT h.order_number, h.header_id, l.line_id, l.FLOW_STATUS_CODE\nFROM OE_ORDER_LINES_ALL l, OE_ORDER_HEADERS_ALL h\nWHERE l.open_flag = 'Y'\nAND h.open_flag = 'Y'\nAND l.booked_flag = 'Y'\nAND l.shipping_interfaced_flag = 'N'\nAND l.shippable_flag = 'Y'\nAND NVL(l.fulfilled_flag, 'N') = 'N'\nAND h.header_id = l.header_id\nAND EXISTS (\n    SELECT 1\n    FROM WF_ITEM_ACTIVITY_STATUSES ST, WF_PROCESS_ACTIVITIES PA\n    WHERE ST.ITEM_TYPE = 'OEOL'\n    AND ST.ITEM_KEY = TO_CHAR(l.line_id)\n    AND st.end_date IS NULL\n    AND ST.PROCESS_ACTIVITY = PA.INSTANCE_ID\n    AND ST.activity_status = 'ERROR'\n    AND PA.process_name = 'UPG_SHIPPING_SUB'\n    AND pa.activity_name = 'SHIP_LINE'\n)\nAND NOT EXISTS (\n    SELECT 1\n    FROM WSH_DELIVERY_DETAILS wdd\n    WHERE wdd.source_line_id = l.line_id\n    AND wdd.released_status = 'R'\n    AND wdd.source_code = 'OE'\n);"
+        ],
+        "query2": [
+          "Check Invalid/Incorrect Data",
+          "SELECT DISTINCT h.order_number, h.header_id, l.line_id, l.FLOW_STATUS_CODE\nFROM OE_ORDER_LINES_ALL l, OE_ORDER_HEADERS_ALL h\nWHERE l.open_flag = 'Y'\nAND h.open_flag = 'Y'\nAND l.booked_flag = 'Y'\nAND l.shipping_interfaced_flag = 'N'\nAND l.shippable_flag = 'Y'\nAND NVL(l.fulfilled_flag, 'N') = 'N'\nAND h.header_id = l.header_id\nAND EXISTS (\n    SELECT 1\n    FROM WF_ITEM_ACTIVITY_STATUSES ST, WF_PROCESS_ACTIVITIES PA\n    WHERE ST.ITEM_TYPE = 'OEOL'\n    AND ST.ITEM_KEY = TO_CHAR(l.line_id)\n    AND st.end_date IS NULL\n    AND ST.PROCESS_ACTIVITY = PA.INSTANCE_ID\n    AND ST.activity_status = 'ERROR'\n    AND PA.process_name = 'UPG_SHIPPING_SUB'\n    AND pa.activity_name = 'SHIP_LINE'\n)\nAND NOT EXISTS (\n    SELECT 1\n    FROM WSH_DELIVERY_DETAILS wdd\n    WHERE wdd.source_line_id = l.line_id\n    AND wdd.released_status = 'R'\n    AND wdd.source_code = 'OE'\n);"
+        ]
+      },
+      "place_holder": [
+        "xxxxxx"
+      ]
+    }
+  ,
+    "FRM-40212": {
+      "Module": "Inventory",
+      "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=454974441702139&id=2014136.1&displayIndex=62&_afrWindowMode=0&_adf.ctrl-state=2krjxhdsi_786",
+      "Applies To": "Oracle Inventory Management - Version 12.1.3 and later\nOracle Landed Cost Management - Version 12.1.3 and later",
+      "Symptoms": "ACTUAL BEHAVIOR\n\n--------------------\n\nWhile doing a Receipt for a LCM Shipment, in a Pre-Receiving organization, the following error occurs:",
+      "Cause": "This happens due to \"duplicate\" shipment records stuck in rcv_transactions_interface for the related Shipment. Perhaps, user created multiple LCM shipments for the same PO as the shipment was stuck in Receiving. LCM shipment showed completed, but, was never available on Receiving side to complete the receipt.",
+      "Solution": "There should only be one shipment being processed for the PO . If the same PO is included in multiple LCM shipments, you may encounter the same error.\n\nIf you are facing the same issue, Please log an SR with the INV debug log and Receiving analyzer for the PO from Note (OR) INL: Data Collection By Shipment Number output, as per note Oracle Landed Cost Management Data Collection By Shipment Number Transaction Data Test (Note 732478.1), for the concerned LCM Shipment.",
+      "Last Update": "2022-01-21 00:00:00",
+      "check_list": {
+        "query1": ["Identify Duplicate Shipment Records", "SELECT * FROM rcv_transactions_interface WHERE shipment_number = '<YourShipmentNumber>' AND po_number = '<YourPONumber>' AND transaction_type IN ('RECEIVE', 'RETURN');"],
+        "query2": ["Check for Multiple LCM Shipments for the Same PO", "SELECT shipment_number, COUNT(*) FROM rcv_transactions_interface WHERE po_number = '<YourPONumber>' AND transaction_type IN ('RECEIVE', 'RETURN') GROUP BY shipment_number HAVING COUNT(*) > 1;"],
+        "query3": ["Get Details of LCM Shipment Errors", "SELECT * FROM your_lcm_error_table WHERE shipment_number = '<YourShipmentNumber>';"],
+        "query4": ["Check LCM Shipments Status", "SELECT * FROM your_lcm_shipment_table WHERE shipment_number = '<YourShipmentNumber>';"],
+        "query5": ["Review INV Debug Log for the Specific PO", "SELECT * FROM inv_debug_log WHERE po_number = '<YourPONumber>';"],
+        "query6": ["Analyze Receiving Transactions for the PO", "SELECT * FROM receiving_analyzer WHERE po_number = '<YourPONumber>';"],
+        "query7": ["Data Collection By Shipment Number for the Concerned LCM Shipment", "SELECT * FROM your_lcm_data_collection_table WHERE shipment_number = '<YourShipmentNumber>';"]
+      },
+      "place_holder": ["<YourShipmentNumber>", "<YourPONumber>", "your_lcm_error_table", "your_lcm_shipment_table", "inv_debug_log", "receiving_analyzer", "your_lcm_data_collection_table"]
+    }
+  ,
+    "APP-FND-00906": {
+      "Module": "BOM",
+      "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=452712969941574&id=760192.1&displayIndex=3&_afrWindowMode=0&_adf.ctrl-state=lo8xupdoo_919",
+      "Applies To": "Oracle Bills of Material - Version 11.5.10.2 and later\nInformation in this document applies to any platform.\nThis document includes all versions of Oracle EBS 11i and R12",
+      "Symptoms": "User(s) are unable to query items in Bill of Materials form. Ctrl+F11 queries some items with unknown logic. Other items cannot be queried using this form, however they can be queried using the master items form.\n\nThe error message is as following:\n\nForm Error Message\nAPP-FND-00906: You can only query existing flexfield code combinations. You entered query\ncriteria in your flexfield that does not identify an existing code combination. Therefore, your\nquery will not return any rows.\nEnter a valid code combination, or enter only the flexfield segment values you know, or do not\nenter any values in the flexfield.",
+      "Cause": "A. Parameter\nThe parameter std_item_access value is not set for the problematic user(s) which is why they are not able to access the Bill of Materials\n\nThis is explained in the following bug:\nBug 7669375: BOMFDBOM- ONE USER GETS ERROR APP-FND-00906\n\nB. BOM Allowed\nThe item was not setup as BOM Allowed. The BOM Allowed flag is setup on the item screen.\n\nC. Engineering Bill\nAssembly_type is 2 (Engineering)  in bom_bill_of_materials / bom_structures_b",
+      "Solution": "A. For the parameter:\nTo implement the solution, please execute the following steps:\n\n1. Go into the responsibility: System Administrator\n\n2. Navigate to Profiles\n\n3. Set Profile \"BOM: Standard Item Access\" to YES for the user(s).\n\n4. Retest the issue.\n\n5. Migrate the solution as appropriate to other environments.\n\nB. For BOM Allowed:\nTo implement the solution, please execute the following steps:\n\n1. Go into the responsibility: Inventory\n\n2. Navigate to Items > Item Master\n\n3. Query the item and ensure the \"BOM Allowed\" Flag is checked to Yes.\n\n4. Retest the issue.\n\n5. Migrate the solution as appropriate to other environments.\n\nC. For Engineering Bill:\n1. Go into the responsibility : Engineering  .\n\n2. Navigate to Prototypes > Bills > Bills\n\n3. Query for the Bill\n\n4. Go to Tools > Transfer Bill > Check box :  Implemented Only (checked) , Selection option: All,\n\n5. Retest the issue.\n\n6. Migrate the solution as appropriate to other environments.",
+      "Last Update": "2023-10-07 00:00:00",
+      "check_list": {
+        "query1": ["Check Parameter Setting", "SELECT * FROM fnd_profile_options WHERE profile_option_name = 'BOM: Standard Item Access';\nSELECT * FROM fnd_profile_option_values WHERE profile_option_id = (SELECT profile_option_id FROM fnd_profile_options WHERE profile_option_name = 'BOM: Standard Item Access') AND level_value = (SELECT user_id FROM fnd_user WHERE user_name = 'USERNAME');"],
+        "query2": ["Check BOM Allowed Setting", "SELECT * FROM inv.mtl_system_items_b WHERE segment1 = 'YOUR_ITEM_CODE';"],
+        "query3": ["Check Engineering Bill Setting", "SELECT * FROM eng.bom_bill_of_materials WHERE assembly_item_id = (SELECT inventory_item_id FROM inv.mtl_system_items_b WHERE segment1 = 'YOUR_ITEM_CODE');"]
+      },
+      "place_holder": ["USERNAME", "YOUR_ITEM_CODE"]
+    }
+,
+    "APP-BOM-28282": {
+      "Module": "BOM",
+      "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=453170308078151&id=2017908.1&displayIndex=29&_afrWindowMode=0&_adf.ctrl-state=lo8xupdoo_1483",
+      "Applies To": "Oracle Bills of Material - Version 11.5.10.2 and later\nOracle Enterprise Asset Management - Version 11.5.10 and later\nInformation in this document applies to any platform.",
+      "Symptoms": "When attempting to access the Asset BOM form in Enterprise Asset Management Responsibility or Bills form in Bills of Materials responsibility, the following error occurs:\n\nAPP-BOM-28282: You do not have access to any of the item types. Bills of Material definition form\ncan be accessed only if you have at least one of the Model, Standard, Planning or Option Class item\ntypes.\n\nAction: Please contact your system Administrator to allow access to at least one of the item types\n\nThe issue can be reproduced at will with the following steps:\n1. Enterprise Asset Management > Assets > Asset BOM\nor\n2 Bills of Materials > Bills > Bills",
+      "Cause": "All three of the following profiles were set to NO:\n\nBOM: Model Item Access\nBOM: Planning Item Access\nBOM: Standard Item Access\n\n\nBOM: Model Item Access\n\nIndicates whether a holder of this responsibility can define and update bills of material for\nmodel and option class items.\n\nBOM: Planning Item Access\n\nIndicates whether a holder of this responsibility can define and update bills of material for\nplanning items.\n\nBOM: Standard Item Access\n\nIndicates whether a holder of this responsibility can define and update bills of material for\nstandard items.",
+      "Solution": "1. Go into the responsibility: System Administrator\n\n2. Navigate to Profiles > System\n\n3. Set at least one of the following profiles to YES either at site, application, or user level\n\nBOM: Model Item Access\nBOM: Planning Item Access\nBOM: Standard Item Access\n\n4. Retest the issue.\n\n5. Migrate the solution as appropriate to other environments.",
+      "Last Update": "2023-06-22 00:00:00",
+      "check_list": {
+        "query1": [
+          "Check the current values of the profiles mentioned in the 'Cause' section",
+          "SELECT PROFILE_NAME, PROFILE_OPTION_NAME, PROFILE_OPTION_VALUE FROM FND_PROFILE_OPTION_VALUES WHERE PROFILE_NAME IN ('BOM: Model Item Access', 'BOM: Planning Item Access', 'BOM: Standard Item Access');"
+        ],
+        "query2": [
+          "Verify the responsibility assignments for the affected user",
+          "SELECT DISTINCT fa.application_id, fa.responsibility_id, fr.responsibility_key, fr.responsibility_name, fu.user_id, fu.user_name FROM fnd_user fu JOIN fnd_responsibility_tl fr ON fu.user_id = fr.user_id JOIN fnd_user_resp_groups_direct fur ON fu.user_id = fur.user_id JOIN fnd_application fa ON fur.application_id = fa.application_id WHERE fr.responsibility_key IN ('SYSTEM_ADMINISTRATOR', 'ENTERPRISE_ASSET_MGMT_RESP', 'BILLS_OF_MATERIAL_RESP');"
+        ],
+        "query3": [
+          "Check if the user has the required responsibilities and access",
+          "SELECT fu.user_name, fr.responsibility_key, fr.responsibility_name FROM fnd_user_resp_groups_direct fur JOIN fnd_responsibility_tl fr ON fur.responsibility_id = fr.responsibility_id JOIN fnd_user fu ON fur.user_id = fu.user_id WHERE fr.responsibility_key IN ('ENTERPRISE_ASSET_MGMT_RESP', 'BILLS_OF_MATERIAL_RESP');"
+        ],
+        "query4": [
+          "Verify the access granted through profile options",
+          "SELECT fur.user_id, fr.responsibility_key, fpo.profile_name, fpo.profile_option_name, fpo.profile_option_value FROM fnd_user_resp_groups_direct fur JOIN fnd_responsibility_tl fr ON fur.responsibility_id = fr.responsibility_id JOIN fnd_profile_option_values fpo ON fur.user_id = fpo.level_value WHERE fr.responsibility_key IN ('ENTERPRISE_ASSET_MGMT_RESP', 'BILLS_OF_MATERIAL_RESP') AND fpo.profile_name IN ('BOM: Model Item Access', 'BOM: Planning Item Access', 'BOM: Standard Item Access');"
+        ]
+      },
+      "place_holder": [
+        "no need for placeholders"
+      ]
+    }
+  ,
+    "APP-FND-01050": {
+      "Module": "BOM",
+      "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=455518441519230&id=2408896.1&displayIndex=50&_afrWindowMode=0&_adf.ctrl-state=15rxyx39oi_1128",
+      "Applies To": "\"Oracle Bills of Material - Version 12.2.7 and later\nInformation in this document applies to any platform.\"",
+      "Symptoms": "1. Non-locator control organization.\n\n 2. Define the routing details, add the subinventory, cursor move to locator, error out:\n\nAPP-FND-01050: The flexfield cannot be opened because it has no displayed segments.",
+      "Cause": "The cause of the issue is Key Flexfield (KFF) of stock locator is not setup.",
+      "Solution": "To implement the solution, please execute the following steps:\n\n1. Go into the responsibility: Inventory.\n\n2. Navigate to Setup>Flexfields>Key>Segments, query for Application=Inventory, Flexfield Title=Stock Locators, open. 3. Un-check \"Freeze Flexfield Definition\" box.\n\n4. Click Segments button, define one segment for locator, make sure \"Displayed\" box is checked, and save.                               5. Check Freeze flexfield definition checkbox, compile.\n\n6. Retest the issue.\n\n7. Migrate the solution as appropriate to other environments.",
+      "Last Update": "2022-11-03 00:00:00",
+      "check_list": {
+        "query1": ["Check Existing Flexfield Segments", "SELECT ff.application_id, ff.id_flex_code, ff.id_flex_num, ffs.segment_name, ffs.segment_column_name, ffs.application_table_name FROM flex_flexfields ff, flex_segments ffs WHERE ff.id_flex_code = 'INV' AND ff.id_flex_num = <Your_Stock_Locators_Flexfield_ID>;"],
+        "query2": ["Check Flexfield Structure", "SELECT * FROM flex_value_sets WHERE flex_value_set_id = <Your_Stock_Locators_Flexfield_ID>;"],
+        "query3": ["Verify Freeze Flexfield Definition", "SELECT freeze_flexfield_definition FROM flex_flexfields WHERE id_flex_code = 'INV' AND id_flex_num = <Your_Stock_Locators_Flexfield_ID>;"],
+        "query4": ["Check Segment Displayed Setting", "SELECT segment_name, enabled_flag FROM flex_segments WHERE id_flex_code = 'INV' AND id_flex_num = <Your_Stock_Locators_Flexfield_ID>;"]
+      },
+      "place_holder": ["<Your_Stock_Locators_Flexfield_ID>"]
+    }
+  ,
+    "APP-FND-01238": {
+      "Module": "BOM",
+      "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=456001127993573&id=2894680.1&displayIndex=69&_afrWindowMode=0&_adf.ctrl-state=15rxyx39oi_1496",
+      "Applies To": "Oracle Bills of Material - Version 12.2.10 and later\nInformation in this document applies to any platform.\nApplies to BOMFDBOM / BOMFDRTG forms.",
+      "Symptoms": "Error when querying bills or routings on View only version of the form.  There are no personalizations or customizations on the form. This is a seeded version of the Routings form and the user's responsibility has functions \"Bills of Material: Update\" ,  \"Routings: Update\" excluded.\n\nError\n-----\nAPP-FND-01238 : Cannot Set Value For Field B_OP_RTGS.ITEM_DESCRIPTION\n\nSteps to replicate the issue:\n1. System Administrator > Security > Responsibility > Define > Create a test responsibility - Bills of Material (View Only Bill/Routing)\n2. Provide menu : BOM_NAVIGATE_GUI\n3. Exclude functions below :\nBills of Material: Update\nRoutings: Update\n4. Assign the responsibility to any user\n5. Log back in using the new responsibility and Open Bills form > Query for any existing Bill > See error\n6. Open Routings form >  Query for any existing routing > See error",
+      "Cause": "Profile 'Flexfields:Validate On Server' was set to Yes.  If this profile value is set as 'Yes' then it tries to validate the form field references (:block.field) raising the exception when its in the read-only mode.",
+      "Solution": "SUMMARY:  With this profile set to 'Yes' the validation request will be sent to the server and no network traffic happens until the validation is complete,\nwhereas without server validation, each SQL lookup is driven from client code. The actual validation that takes place will be the same, whether done with Validate on Server set to  'Yes' or 'No'.\n\nAdditionally, If you are using flexfields server-side validation, you cannot use form field references (:block.field) on a Read only version.  \nYou must either remove your field references or turn off flexfields server-side validation.\n\nOne misconception is that this profile will turn off validation. It does NOT turn validation off.\nIts purpose is to help performance for users with wide-area network environments by reducing the network traffic associated with flex validation.  \n\nTo implement the solution, please follow below steps -\n\n1. System administrator > Profiles > System profiles > Query for \"Flexfields: Validate on Server\" > Set value to 'No'\n\n2. Save and retest the issue.",
+      "Last Update": "2022-09-07 00:00:00",
+      "check_list": {
+        "query1": ["Check 'Flexfields: Validate On Server' Profile Value", "SELECT PROFILE_OPTION_ID, PROFILE_OPTION_NAME, LEVEL_ID, LEVEL_VALUE FROM FND_PROFILE_OPTION_VALUES WHERE PROFILE_OPTION_NAME = 'FLEXFIELDS:VALIDATE_ON_SERVER';"],
+        "query2": ["Check Responsibility Details", "SELECT RESPONSIBILITY_ID, RESPONSIBILITY_NAME, APPLICATION_ID, MENU_ID FROM FND_RESPONSIBILITY_VL WHERE RESPONSIBILITY_NAME = 'YourResponsibilityName';"],
+        "query3": ["Check if Functions are Excluded for the Responsibility", "SELECT FUNCTION_ID, FUNCTION_NAME, EXCLUDED_FLAG FROM FND_RESP_FUNCTIONS WHERE RESPONSIBILITY_ID = (SELECT RESPONSIBILITY_ID FROM FND_RESPONSIBILITY_VL WHERE RESPONSIBILITY_NAME = 'YourResponsibilityName');"],
+        "query4": ["Check Profile Values for the Affected User", "SELECT USER_ID, USER_NAME FROM FND_USER WHERE USER_NAME = 'YourUserName';"],
+        "query5": ["Check 'FLEXFIELDS:ENABLE_SERVER_SIDE_VALIDATION' Profile Value", "SELECT PROFILE_OPTION_ID, PROFILE_OPTION_NAME, LEVEL_ID, LEVEL_VALUE FROM FND_PROFILE_OPTION_VALUES WHERE PROFILE_OPTION_NAME = 'FLEXFIELDS:ENABLE_SERVER_SIDE_VALIDATION';"],
+        "query6": ["Check for Field References in Flexfields", "SELECT BLOCK_NAME, FIELD_NAME FROM FND_FLEX_SERVER_VALIDATORS WHERE FIELD_REFERENCE = ':block.field';"],
+        "query7": ["Check Last Update of the Solution Document", "SELECT DOCUMENT_ID, DOCUMENT_NAME, LAST_UPDATE_DATE FROM FND_DOCUMENTS WHERE DOCUMENT_NAME = 'APP-FND-01238';"]
+      },
+      "place_holder": ["YourResponsibilityName", "YourUserName", ":block.field"]
+    }
+,
+    "APP-BOM-20156": {
+      "Module": "BOM",
+      "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=455995594136868&id=2265275.1&displayIndex=64&_afrWindowMode=0&_adf.ctrl-state=15rxyx39oi_1439",
+      "Applies To": "Oracle Bills of Material - Version 12.2.3 and later\nInformation in this document applies to any platform.",
+      "Symptoms": "On : 12.2.3 version, Routings\n\n  When user is attempting to delete a resource from department, the following error is thrown\n\n  ERROR\n  -----------------------\n  APP-BOM-20156: You cannot delete this resource. An operation references <Resource Name>.\n  Cause: You cannot delete resource <Resource Name>. A routing operation references <Resource Name>.\n  Action: Disable resource <Resource Name>.\n\n  EXPECTATION\n  -----------------\n  Should be able to delete resource from the department\n\nSTEPS\n-----------------------\nThe issue can be reproduced at will with the following steps:\n\n1) From Bills of Material Responsibility, Open Departments form\n    Bills of Materials > Routings > Departments\n3) Query for the department to which the resource is assigned and needs to deleted\n4) Click Resources button\n5) Select the resource to be deleted from the department\n6) Edit > Delete from menu. The error message is thrown",
+      "Cause": "To be able to delete a resource from a department, the following constraints should be met\nConstraint\tIdentification SQL\nNo shifts defined for the resource in the department\tSELECT 1 FROM DUAL WHERE NOT EXISTS\n            (SELECT 1 FROM BOM_RESOURCE_SHIFTS\n             WHERE DEPARTMENT_ID = &Department_Id\n               AND RESOURCE_ID = &Resource_Id);\nThe resource should NOT be shared with other departments\tSELECT 1 FROM DUAL WHERE NOT EXISTS\n            (SELECT 1 FROM BOM_DEPARTMENT_RESOURCES\n             WHERE SHARE_FROM_DEPT_ID = &Department_Id\n              AND RESOURCE_ID = &Resource_Id);\nNo standard operations using the resource\tSELECT 1 FROM DUAL WHERE NOT EXISTS\n            (SELECT 1 FROM BOM_STD_OP_RESOURCES bsor,\n              BOM_STANDARD_OPERATIONS bso\n             WHERE bso.STANDARD_OPERATION_ID = bsor.STANDARD_OPERATION_ID\n               AND bso.DEPARTMENT_ID = &Department_Id\n               AND bsor.RESOURCE_ID = &Resource_Id);\nNo routing operations using the resource\n\n(Even though the operations are disabled)\n\nSELECT 1 FROM DUAL WHERE NOT EXISTS\n            (SELECT 1 FROM BOM_OPERATION_RESOURCES bor,\n             BOM_OPERATION_SEQUENCES bos\n             WHERE bor.OPERATION_SEQUENCE_ID = bos.OPERATION_SEQUENCE_ID\n               AND bor.RESOURCE_ID = &Resource_Id\n               AND bos.DEPARTMENT_ID = &Department_Id);\nNo unclosed WIP jobs using the resource\nSELECT 1 FROM DUAL WHERE NOT EXISTS\n            (SELECT 1 FROM WIP_OPERATIONS wo,\n                           WIP_OPERATION_RESOURCES wor,\n                           WIP_DISCRETE_JOBS wdj\n             WHERE wo.WIP_ENTITY_ID = wor.WIP_ENTITY_ID\n               AND wdj.WIP_ENTITY_ID = wo.WIP_ENTITY_ID\n               AND wo.OPERATION_SEQ_NUM = wor.OPERATION_SEQ_NUM\n               AND wo.ORGANIZATION_ID = wor.ORGANIZATION_ID\n               AND nvl(wo.REPETITIVE_SCHEDULE_ID, -1) = nvl(wor.REPETITIVE_SCHEDULE_ID, -1)\n               AND wor.RESOURCE_ID = &Resource_Id\n               AND wo.DEPARTMENT_ID = &Department_Id\n               AND wdj.STATUS_TYPE <> 12);",
+      "Solution": "Identify the constraint that is not allowing to delete resource from department.\nIf there are WIP jobs using the resource, close the jobs.\nIf there is other data, check with business, clear the data and try to delete resource from department",
+      "Last Update": "2023-08-09 00:00:00",
+      "check_list": {
+        "query1": ["Check if shifts are defined for the resource in the department", "SELECT 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM BOM_RESOURCE_SHIFTS WHERE DEPARTMENT_ID = &Department_Id AND RESOURCE_ID = &Resource_Id);"],
+        "query2": ["Check if the resource is shared with other departments", "SELECT 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM BOM_DEPARTMENT_RESOURCES WHERE SHARE_FROM_DEPT_ID = &Department_Id AND RESOURCE_ID = &Resource_Id);"],
+        "query3": ["Check if there are standard operations using the resource", "SELECT 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM BOM_STD_OP_RESOURCES bsor JOIN BOM_STANDARD_OPERATIONS bso ON bso.STANDARD_OPERATION_ID = bsor.STANDARD_OPERATION_ID WHERE bso.DEPARTMENT_ID = &Department_Id AND bsor.RESOURCE_ID = &Resource_Id);"],
+        "query4": ["Check if there are routing operations using the resource", "SELECT 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM BOM_OPERATION_RESOURCES bor JOIN BOM_OPERATION_SEQUENCES bos ON bor.OPERATION_SEQUENCE_ID = bos.OPERATION_SEQUENCE_ID WHERE bor.RESOURCE_ID = &Resource_Id AND bos.DEPARTMENT_ID = &Department_Id);"],
+        "query5": ["Check if there are unclosed WIP jobs using the resource", "SELECT 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM WIP_OPERATIONS wo JOIN WIP_OPERATION_RESOURCES wor ON wo.WIP_ENTITY_ID = wor.WIP_ENTITY_ID JOIN WIP_DISCRETE_JOBS wdj ON wo.WIP_ENTITY_ID = wdj.WIP_ENTITY_ID WHERE wor.RESOURCE_ID = &Resource_Id AND wo.DEPARTMENT_ID = &Department_Id AND wdj.STATUS_TYPE <> 12);"]
+      },
+      "place_holder": ["&Department_Id", "&Resource_Id"]
+    }
+,
+
+    "APP-BOM-20597": {
+      "Module": "BOM",
+      "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=455992825001123&id=2823218.1&displayIndex=63&_afrWindowMode=0&_adf.ctrl-state=15rxyx39oi_1398",
+      "Applies To": "Oracle Bills of Material - Version 12.2.6 and later\nInformation in this document applies to any platform.",
+      "Symptoms": "Calculate Manufacturing Lead Times GUI Program completed in error\n\nERROR\n-----------------------\nProgram's Log file shows the below error\n\n  Job will be scheduled using resource utilization\n  Job will be scheduled using resource efficiency\n  Recalculated usage_rate 0.000000 with assigned_units n.000000\nAPP-BOM-20597: Lead time calculation for nnnnnnnnn.0 failed\n\n***** End Of Program - Manufacturing Lead Time GUI *****\n\nSTEPS\n-----------------------\n1. Navigate to Bills of Materials > Routings > Lead Times\n(Or choose View > Requests > Submit)\n2. Submit the Concurrent program Calculate Manufacturing Lead Times GUI with the required Parameters",
+      "Cause": "Development team explained that there were issues in the source code of the Program which resulted in the Lead Time Computation program to error out when Department- Resource Assigned Units is set to 0 for those department resources referred in the routings.\n \n\nBug 29474666 - COMPUTE LEAD TIMES PROGRAM COMPLETES IN ERROR FOR SOME PART#S\n\nThe rectified updated code is present in file wiloer6.ppc with version 120.17.12020000.5.or higher.",
+      "Solution": "To implement the solution, please execute the following steps in a Test instance:\n\n1. Download and review the readme and pre-requisites for Patch 26717937:R12.WIP.C\n\n2. Ensure that you have taken a backup of your system before applying the recommended patch.\n\n3. Apply the patch in a test environment.\n\n4. Confirm the following file and version: wiloer6.ppc and version 120.17.12020000.5.\n\n5. Retest the issue.\n\n6. Migrate the solution as appropriate to other environments.",
+      "Last Update": "2023-11-13 00:00:00",
+      "check_list": {
+        "query1": ["Check Program Log", "SELECT LOG_TEXT FROM FND_CONCURRENT_REQUESTS WHERE REQUEST_ID = <Request_ID>;"],
+        "query2": ["Review Concurrent Program Execution", "SELECT * FROM FND_CONCURRENT_PROCESSES WHERE REQUEST_ID = <Request_ID>;"],
+        "query3": ["Check for Specific Department-Resource Assigned Units", "SELECT * FROM <Your_Department_Resource_Table> WHERE DEPARTMENT = 'nnnnnnnnn';"],
+        "query4": ["Verify Patch Information", "SELECT * FROM AD_APPLIED_PATCHES WHERE PATCH_ID = 26717937;"],
+        "query5": ["Confirm Code Version of wiloer6.ppc", "SELECT * FROM <Your_Code_Version_Table> WHERE FILE_NAME = 'wiloer6.ppc' AND VERSION >= '120.17.12020000.5';"]
+      },
+      "place_holder": ["<Request_ID>", "<Your_Department_Resource_Table>", "<Your_Code_Version_Table>"]
+    }
+  ,
+    "APP-BOM-20273": {
+      "Module": "BOM",
+      "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=455974186465477&id=1222013.1&displayIndex=70&_afrWindowMode=0&_adf.ctrl-state=15rxyx39oi_1349",
+      "Applies To": "Oracle Bills of Material - Version 12.0.6 and later\nInformation in this document applies to any platform.",
+      "Symptoms": "nothing",
+      "Cause": "Duplicate Above Record on BOM Components causes irrecoverable error APP-BOM-20273 due to non-unique Op Sequence; cannot edit record, unless cleared.\n\nThe issue can be reproduced at will with the following steps:\n1. Bills -> Bills\n2. Query the bill of material in the form.\n3. Use green plus sign to add a new record.\n4. Edit -> Duplicate -> Record Above to copy the above record.\n5. Scroll to the Quantity field and adjust the quantity to a portion of existing quantity.\n6. Save and get message about effectivity date.\n7. Select Effectivity Date tab to adjust the effectivity date.\n8. As soon as new date is selected, see the below message.\n\n\nAPP-BOM-20273: Component Item exists for this operation sequence and date range.\n\n9. Click on OK.\n10. Attempt to select the Main tab to change the Operation Sequence and error reappears. Cannot successfully navigate to field to change the value.",
+      "Solution": "This is expected behavior. Form Trigger would not allow continuing as the validation happens on effective date, and it needs the operation sequence to be different, if the component is identical.\n\n1) When you encounter this, Please use F6 or (Clear) record, and enter it again. After duplicating the record, Please change the operation sequence on the line first, and then proceed to update the effective date, this will not cause any errors.\n\n2) The other way to get around this is to clear the effective date alone, go back to operation sequence, modify it, then change effective date and save the record.",
+      "Last Update": "2021-11-24 00:00:00",
+      "check_list": {
+        "query1": ["Identify Duplicate Records", "SELECT * FROM your_bom_table WHERE operation_sequence IN ( SELECT operation_sequence FROM your_bom_table GROUP BY operation_sequence HAVING COUNT(*) > 1 );"],
+        "query2": ["Check for Non-Unique Operation Sequences", "SELECT operation_sequence, COUNT(*) FROM your_bom_table GROUP BY operation_sequence HAVING COUNT(*) > 1;"],
+        "query3": ["Inspect Components with Identical Operation Sequences", "SELECT * FROM your_bom_table WHERE operation_sequence = 'your_duplicate_sequence';"],
+        "query4": ["Identify Components with Same Operation Sequence and Date Range", "SELECT * FROM your_bom_table WHERE operation_sequence = 'your_sequence' AND effectivity_date = 'your_date';"],
+        "query5": ["Check for Components with Same Item, Operation Sequence, and Date Range", "SELECT * FROM your_bom_table WHERE component_item = 'your_item' AND operation_sequence = 'your_sequence' AND effectivity_date = 'your_date';"],
+        "query6": ["Inspect Records with APP-BOM-20273 Error", "SELECT * FROM your_bom_table WHERE error_code = 'APP-BOM-20273';"],
+        "query7": ["Review the Latest Updates", "SELECT * FROM your_bom_table WHERE last_update >= TO_DATE('2021-11-24', 'YYYY-MM-DD');"]
+      },
+      "place_holder": ["your_bom_table", "your_duplicate_sequence", "your_sequence", "your_date", "your_item"]
+    }
+,
+    "APP-BOM-20252": {
+      "Module": "BOM",
+      "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=456048510090077&id=277603.1&displayIndex=71&_afrWindowMode=0&_adf.ctrl-state=15rxyx39oi_1643",
+      "Applies To": "Oracle Bills of Material - Version 11.5.7 to 12.2.4 [Release 11.5 to 12.2]\nInformation in this document applies to any platform.",
+      "Symptoms": "Receive the following error while modifying a common bill which has an associated organization disabled...\n\n* The system does not allow it as the new item cannot be enabled in CH5 as the Organization: CH5 is disabled - Error message: APP-BOM-20252",
+      "Cause": "A.Child Organization Disabled...\nB. Item NOT Present...",
+      "Solution": "A.Child Organization Disabled...\nOr using a Data fix:...",
+      "Last Update": "2023-02-22 00:00:00",
+      "check_list": {
+        "query1": ["Identify Disabled Organizations", "SELECT ood.organization_id, ood.organization_code, ood.disable_date FROM org_organization_definitions ood WHERE ood.disable_date IS NOT NULL;"],
+        "query2": ["Check Common Bills and Organizations", "SELECT BBOM.ORGANIZATION_ID, MSI1.INVENTORY_ITEM_ID, BBOM.ASSEMBLY_TYPE, MSI1.REPLENISH_TO_ORDER_FLAG, MSI1.PICK_COMPONENTS_FLAG FROM BOM_BILL_OF_MATERIALS BBOM, MTL_SYSTEM_ITEMS MSI1 WHERE BBOM.SOURCE_BILL_SEQUENCE_ID = &SOURCE_BILL_SEQUENCE_ID AND BBOM.ORGANIZATION_ID <> &SOURCE_ORGANIZATION_ID AND MSI1.INVENTORY_ITEM_ID = BBOM.ASSEMBLY_ITEM_ID AND MSI1.ORGANIZATION_ID = BBOM.ORGANIZATION_ID;"],
+        "query3": ["Check Organizations Where Component Item is Assigned", "SELECT inventory_item_id, organization_id FROM mtl_system_items_b WHERE inventory_item_id = &Item_ID_for_component;"]
+      },
+      "place_holder": ["&SOURCE_BILL_SEQUENCE_ID", "&SOURCE_ORGANIZATION_ID", "&Item_ID_for_component"]
+    }
+  ,
+  
+    "APP-FND-01934": {
+      "Module": "BOM",
+      "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=457122523475101&id=1910425.1&displayIndex=80&_afrWindowMode=0&_adf.ctrl-state=15rxyx39oi_1790",
+      "Applies To": "Oracle Bills of Material - Version 12.1.3 and later\nInformation in this document applies to any platform.",
+      "Symptoms": "Rollup Cumulative Lead Times GUI Completing in Error/Running unusually long (running for 12+ hours)\n\nERROR\n\nAPP-FND-01934: ORA-01555: snapshot too old: rollback segment number with name \"\" too small in Package BOMPCCLT Procedure explode_assy(3)\nSTEPS\n\nThe issue can be reproduced intermittently with the following steps:\n1. Run Rollup Cumulative Lead Times, see error after a long wait.",
+      "Cause": "This delay in performance is caused by a coding problem.\n\nThe best execution plan for the subquery when there are many rows in\n BOM_LOW_LEVEL_CODES will always be an index unique/range scan of\n BOM_LOW_LEVEL_CODES_U1. If there are very few rows then this will not be an\n additional overhead.\n\n Developers added a SQL Hint to advise the Cost-based Optimizer to do this.\n\nSelect /*+ INDEX(bllc BOM_LOW_LEVEL_CODES_U1 */ null\n--added hint for Bug 19001843\n  From bom_low_level_codes bllc\n...\n\nThis is described in Bug 19001843 - ROLLUP CUMULATIVE LEAD TIMES GUI COMPLETING IN ERROR/RUNNING UNUSUALLY LONG",
+      "Solution": "To implement the solution, please execute the following steps:\n\n1. Download and review the readme and pre-requisites for the appropriate patch for your environment: \n\nPatch/File Details\nRelease\tPatch\tFile/Version\n12.1.x\tPatch 19001843:R12.BOM.C\tBOMCCLTB.pls 120.2.12010000.2\n12.2.x\tPatch 19001843:R12.BOM.D\tBOMCCLTB.pls 120.2.12020000.2\n2. Ensure that you have taken a backup of your system before applying the recommended patch.\n3. Apply the patch in a test environment.\n4. Confirm the upgrade file version. You can use Unix commands like \n\nstrings -a $BOM_TOP/patch/115/sql/BOMCCLTB.pls | grep '$Header'\nOr you could run the Apps Check for Application Parameter: Bills of Material -- refer to Note 276207.1.\n\n5. Retest the issue.\n6. Migrate the solution as appropriate to other environments.",
+      "Last Update": "2021-03-01 00:00:00",
+      "check_list": {
+        "query1": ["Check active sessions", "SELECT * FROM v$session WHERE status = 'ACTIVE';"],
+        "query2": ["Identify blocking sessions", "SELECT blocking_session, sid, serial#, wait_class, seconds_in_wait FROM v$session WHERE blocking_session IS NOT NULL;"],
+        "query3": ["Check rollback segments", "SELECT tablespace_name, segment_name, status FROM dba_rollback_segs;"],
+        "query4": ["View SQL statements currently executing", "SELECT s.sql_id, s.sql_text, s.elapsed_time, s.executions, s.fetches, s.parse_calls FROM v$sql s JOIN v$session ss ON s.sql_id = ss.sql_id WHERE ss.status = 'ACTIVE';"],
+        "query5": ["Check for long-running SQL statements", "SELECT sql_id, sql_text, elapsed_time, executions, fetches, parse_calls FROM v$sql WHERE elapsed_time > (60 * 5) ORDER BY elapsed_time DESC;"],
+        "query6": ["Query for affected package and procedure", "SELECT owner, object_name, object_type FROM all_objects WHERE object_name IN ('BOMPCCLT', 'explode_assy') AND object_type IN ('PACKAGE', 'PROCEDURE');"],
+        "query7": ["Check for index usage in the problematic query", "EXPLAIN PLAN FOR SELECT /*+ INDEX(bllc BOM_LOW_LEVEL_CODES_U1) */ null FROM bom_low_level_codes bllc;"],
+        "query8": ["Review table and index statistics", "ANALYZE TABLE bom_low_level_codes COMPUTE STATISTICS; ANALYZE INDEX BOM_LOW_LEVEL_CODES_U1 COMPUTE STATISTICS;"],
+        "query9": ["Check for database locks", "SELECT * FROM dba_lock_internal;"],
+        "query10": ["Query for recently applied patches", "SELECT * FROM dba_registry_sqlpatch;"]
+      },
+      "place_holder": ["no need for placeholders"]
+    },
+    
+        "APP-FND-01048": {
+          "Module": "BOM",
+          "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=457311259237850&id=291092.1&displayIndex=42&_afrWindowMode=0&_adf.ctrl-state=15rxyx39oi_1839",
+          "Applies To": "Oracle Bills of Material - Version 11.5.9 and later\nInformation in this document applies to any platform.\nThis document includes all versions of Oracle EBS 11i and R12",
+          "Symptoms": "Errors similar to the following are displayed when trying to define a new Bill of Material (BOM) for a particular item using the Bill Define form (BOMFDBOM.fmb). This occurs after entering or selecting an item.\n\nError 1:\n            No entries found for List of Values\n            --------------------------------------------------------------\n            APP-FND-01436: List of Values cannot find any values for you to choose\n\n            Cause: The List of Values execution failed to find any values.\n\n            Cause: The SQL statement specified to fdlfch() failed to return any values.\n\n            Action: Check the message stack for any SQL statement failure messages.\n            Check to make sure your SQL statement works in SQL*Plus.\n            (ROUTINE=fdlfch)\n            --------------------------------------------------------------\n\nError 2:\n            No entries found for List of Values\n\n            --------------------------------------------------------------\n            APP-FND-01048: Use of this combination restricted by WHERE clause\n            ' ( ((:parameter.query_mode = 2 AND bom_enabled_flag = 'Y')\n            OR (:parameter.query_mode = 1 AND EXISTS (SELECT NULL FROM\n            bom_bill_of_materials bom WHERE bom.organization_id =\n            :parameter.org_id AND bom.assembly_item_id = inventory_item_id\n            AND ((:parameter.bom_or_eng = 1 AND assembly_type = 1) OR\n            :parameter.bom_or_eng = 2) ))) AND (bom_item_type in\n            (:parameter.model_item_access, :parameter.planning_item_access,\n            :parameter.std_item_access, :parameter.oc_item_access) ) AND\n            ((:parameter.bom_or_eng = 1 AND eng_item_flag = 'N' AND NOT\n            EXISTS (SELECT 'X' FROM bom_bill_of_materials bom WHERE\n            bom.organization_id = :parameter.org_id AND bom.assembly_item_id\n            = inventory_item_id AND bom.alternate_bom_designator IS NULL AND\n            bom.assembly_type <> 1) AND (:parameter.eam_type is null OR\n            (:parameter.eam_type in (1, 2)",
+          "Cause": "The errors indicate that the item you have entered or selected is not available for use as restricted by the displayed where clause. In order to use a particular item to define a new bill, certain criteria must be met. These are:\n\nThe item must exist in the current organization\nThe item must be BOM Enabled\nThe item's BOM Item Type attribute must be one of the following:\n\nModel (1)*\nOption Class(2)*\nPlanning (3)\nStandard (4)\n\n* In Process Manufacturing (OPM) enabled organizations, items with BOM Item Types of Model and Option Class are also excluded from the LOV.\nThe bill cannot be defined in both Engineering and Manufacturing. Try querying the bill using the Bill Define form in an Engineering responsibility if trying to define the bill in a Manufacturing responsibility or vice-versa. If the bill is defined in Engineering, it can be transferred to Manufacturing if needed.\nIf the bill is being created in a Manufacturing responsibility, the item cannot be an engineering item.\nThe EAM_TYPE parameter** must be NULL or if defined with a value of 1 or 2, it must equal the item's EAM_ITEM_TYPE\nThe UNIT_EFF_FLAG parameter** must be 'Y' or if defined with a value of 'N', the item's\nEffectivity Control attribute must be set to 'Date' (1)\n \n\n**The EAM_TYPE and UNIT_EFF_FLAG parameters are passed to the form when opened.\nTo view their values, perform the following actions:\nUsing the responsibility and instance where you get the error, open the Bill Define form (Navigate: Bills > Bills)\nChoose the Help > Diagnostics > Examine pull down menu option (you will need access to do this)\nIn the field labeled \"Block\", use the LOV to choose \"PARAMETER\"\nIn the field labeled \"Field\", enter a parameter name to see its value (either EAM_TYPE or UNIT_EFF_FLAG)\nAfter entering, its defined value will display in the \"Value\" field",
+          "Solution": "Check each of the restrictions listed above. If any of them are not met, the item in question cannot be used to define a bill in the current organization.",
+          "Last Update": "2023-04-04 00:00:00",
+          "check_list": {
+            "query1": ["Check if the item exists in the current organization", "SELECT * FROM inv.mtl_system_items_b WHERE organization_id = :parameter.org_id AND inventory_item_id = :parameter.inventory_item_id;"],
+            "query2": ["Check if the item is BOM Enabled", "SELECT bom_enabled_flag FROM inv.mtl_system_items_b WHERE organization_id = :parameter.org_id AND inventory_item_id = :parameter.inventory_item_id;"],
+            "query3": ["Check the BOM Item Type attribute of the item", "SELECT bom_item_type FROM inv.mtl_system_items_b WHERE organization_id = :parameter.org_id AND inventory_item_id = :parameter.inventory_item_id;"],
+            "query4": ["Check if the item is excluded in OPM enabled organizations (for Model and Option Class)", "SELECT * FROM inv.mtl_system_items_b WHERE organization_id = :parameter.org_id AND inventory_item_id = :parameter.inventory_item_id AND bom_item_type IN (1, 2);"],
+            "query5": ["Check if the bill is defined in both Engineering and Manufacturing", "SELECT * FROM bom.bom_bill_of_materials WHERE organization_id = :parameter.org_id AND assembly_item_id = :parameter.inventory_item_id;"],
+            "query6": ["Check the EAM_TYPE and UNIT_EFF_FLAG parameters", "SELECT parameter_name, parameter_value FROM fnd_profile_options WHERE profile_option_name IN ('EAM_TYPE', 'UNIT_EFF_FLAG');"],
+            "query7": ["Check the value of EAM_TYPE for the given item", "SELECT eam_item_type FROM inv.mtl_system_items_b WHERE organization_id = :parameter.org_id AND inventory_item_id = :parameter.inventory_item_id;"],
+            "query8": ["Check the Effectivity Control attribute for the item", "SELECT effectivity_control FROM inv.mtl_system_items_b WHERE organization_id = :parameter.org_id AND inventory_item_id = :parameter.inventory_item_id;"]
+          },
+          "place_holder": [":parameter.org_id", ":parameter.inventory_item_id"]
+        },
+            "APP-BOM-20516": {
+              "Module": "WIP",
+              "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=459518831005535&parent=EXTERNAL_SEARCH&sourceId=PROBLEM&id=1395827.1&_afrWindowMode=0&_adf.ctrl-state=187brpmvy3_1375",
+              "Applies To": "Oracle Bills of Material - Version 12.0.4 and later\nInformation in this document applies to any platform.\nWIP Discrete job",
+              "Symptoms": "A WIP discrete job cannot be updated and saved without getting the error APP-BOM-20516:\n\nERROR\n-----------------------\nAPP-BOM-20516: Item XYZ has no valid revision on (ABC Date i.e. 07-JUL-2010).\n\nSTEPS\n-----------------------\nThe issue can be reproduced at will with the following steps:\n1. WIP>DISCRETE JOBS>DISCRETE JOBS Open discrete job\ntry to update and save, get the error",
+              "Cause": "Get the Item id for and the org id for and run the following queries:\n\n1) SELECT * FROM MTL_ITEM_REVISIONS_B MIR\nWHERE INVENTORY_ITEM_ID = &item_id\nAND ORGANIZATION_ID = &org_id;\n\n2) SELECT *\nFROM MTL_RTG_ITEM_REVISIONS\nWHERE INVENTORY_ITEM_ID = &item_id\nAND ORGANIZATION_ID = &org_id;\n\nNext, check if the item has a routing:\n\n3) SELECT *\nFROM BOM_OPERATIONAL_ROUTINGS\nWHERE ASSEMBLY_ITEM_ID = &item_id\nAND ORGANIZATION_ID = &org_id;\n\n\nIf the assembly has a routing, please check that a routing revision record\nexists for the assembly. Run the SQL query:\n\n4) SELECT *\nFROM MTL_RTG_ITEM_REVISIONS\nWHERE INVENTORY_ITEM_ID = &item_id\nAND ORGANIZATION_ID = &org_id;",
+              "Solution": "The error that the customer is seeing is a valid error:\nAPP-BOM-20516: Item XYZ has no valid revision on 07-JUL-2010.\n\ni.e.The routing revision for this item was effective on 12-JUL-2010 based on output of queries 3) and 4) above. \n\nHence, for this example on 07-JUL-2010, Item XYZ has no valid revision.\n\nThis error is been rendered by the system because the Discrete Job was created on 07-JUL-2010, when there was no routing revision for the Item, based on table information.\n\nIn test instance, create a new WIP Discrete Job and save. There will be no error thrown.\n\nPlease test deleting the WIP discrete job that is causing the issue, progress to production environment as needed.",
+              "Last Update": "2023-06-22 00:00:00",
+              "check_list": {
+                "query1": ["Check Item Revisions", "SELECT * FROM MTL_ITEM_REVISIONS_B MIR\nWHERE INVENTORY_ITEM_ID = &item_id\nAND ORGANIZATION_ID = &org_id;"],
+                "query2": ["Check Routing Item Revisions", "SELECT *\nFROM MTL_RTG_ITEM_REVISIONS\nWHERE INVENTORY_ITEM_ID = &item_id\nAND ORGANIZATION_ID = &org_id;"],
+                "query3": ["Check Operational Routings", "SELECT *\nFROM BOM_OPERATIONAL_ROUTINGS\nWHERE ASSEMBLY_ITEM_ID = &item_id\nAND ORGANIZATION_ID = &org_id;"],
+                "query4": ["Check Routing Revision Records", "SELECT *\nFROM MTL_RTG_ITEM_REVISIONS\nWHERE INVENTORY_ITEM_ID = &item_id\nAND ORGANIZATION_ID = &org_id;"]
+              },
+              "place_holder": ["&item_id", "&org_id"]
+            },
+            
+                "ORA-01403": {
+                  "Module": "WIP",
+                  "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=459903113943417&parent=EXTERNAL_SEARCH&sourceId=PROBLEM&id=2467818.1&_afrWindowMode=0&_adf.ctrl-state=187brpmvy3_1424",
+                  "Applies To": "Oracle Work in Process - Version 12.1.3 to 12.1.3 [Release 12.1]\nInformation in this document applies to any platform.",
+                  "Symptoms": "When attempting to perform Component pick release, the following error occurs.\n\nERROR\n\nAn unexpected error was encountered: wip_picking_pvt.allocate: ORA-01403: no data found STEPS TO REPRODUCE\n1.Create Non Standard WIP Job.\n2.Component pick release.\n3.Increase the quantity of 1 component in the assembly item.\n4.Component pick release.",
+                  "Cause": "This is a bug",
+                  "Solution": "To implement the solution, please execute the following steps:\n\n1. Download and review the readme and pre-requisites for Patch.28650962:R12.WIP.B - COMPONENT PICK RELEASE ERROR: WIP_PICKING_PVT.ALLOCATE ORA-0140\n\n2. Ensure that you have taken a backup of your system before applying the recommended patch.\n\n3. Apply the patch in a test environment.\n\n4. Confirm the following file versions:\n  wippckvb.pls 120.18.12010000.34\n\n\nYou can use the commands like the following:\n\n  SELECT name, text FROM dba_source\n  WHERE name LIKE UPPER('%wip_picking_pvt%')\n  AND UPPER(text) LIKE '%$HEADER%'\n  AND line < 7;\n\n5. Retest the issue.\n\n6. Migrate the solution as appropriate to other environments.",
+                  "Last Update": "nothing",
+                  "check_list": {
+                    "query1": [
+                      "Check if the mentioned bug patch is installed",
+                      "SELECT * FROM dba_registry_sqlpatch WHERE patch_id = '28650962';"
+                    ],
+                    "query2": [
+                      "Verify the current version of the wippckvb.pls file",
+                      "SELECT * FROM all_objects WHERE object_name = 'wippckvb.pls';"
+                    ],
+                    "query3": [
+                      "Examine the source code for the wip_picking_pvt package",
+                      "SELECT name, text FROM dba_source WHERE name LIKE UPPER('%wip_picking_pvt%') AND UPPER(text) LIKE '%$HEADER%' AND line < 7;"
+                    ],
+                    "query4": [
+                      "Check for pending or failed transactions related to WIP jobs",
+                      "SELECT * FROM wip_job_interface WHERE status IN ('P', 'F');"
+                    ],
+                    "query5": [
+                      "Review WIP job and component details",
+                      "SELECT * FROM wip_jobs WHERE job_id = (SELECT job_id FROM wip_job_interface WHERE status IN ('P', 'F') AND ROWNUM = 1);",
+                      "SELECT * FROM wip_components WHERE job_id = (SELECT job_id FROM wip_job_interface WHERE status IN ('P', 'F') AND ROWNUM = 1);"
+                    ],
+                    "query6": [
+                      "Check for pending resource or material transactions",
+                      "SELECT * FROM wip_resource_txns WHERE job_id = (SELECT job_id FROM wip_job_interface WHERE status IN ('P', 'F') AND ROWNUM = 1);",
+                      "SELECT * FROM wip_material_txns WHERE job_id = (SELECT job_id FROM wip_job_interface WHERE status IN ('P', 'F') AND ROWNUM = 1);"
+                    ],
+                    "query7": [
+                      "Verify the existence of the mentioned patch in the database",
+                      "SELECT * FROM ad_applied_patches WHERE patch_id = '28650962';"
+                    ]
+                  },
+                  "place_holder": [
+                    "no need for placeholders"]
+                }
+              }
+              
+          
+  

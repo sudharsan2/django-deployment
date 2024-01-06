@@ -10,8 +10,8 @@ class error_code(models.Model):
     cause = models.TextField(null =True)
     solution = models.TextField(null =True)
     last_update = models.TextField(null =True)
-    # check_list = models.JSONField(null=True)
-    # place_holder = models.JSONField(null =True)
+    check_list = models.JSONField(null=True)
+    place_holder = models.JSONField(null =True)
 
     def __str__(self):
         return self.error_id
