@@ -1,0 +1,116 @@
+{
+ 
+  "FRM-41082": {
+ 
+    "Module": "MRP",
+ 
+    "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=454635019320461&id=2937694.1&displayIndex=27&_afrWindowMode=0&_adf.ctrl-state=1bcmlc04p6_1606",
+ 
+    "Applies To": "Oracle Materials Requirement Planning - Version 12.1.3 and later\nInformation in this document applies to any platform.",
+ 
+    "Symptoms": "When attempting to navigate to Materials Requirement Planning (MRP) workbench,\nthe following error occurs.\n\nERROR\n-----------------------\n\nFRM-41082: Cannot resize item: position of item places it off of canvas\n\nSTEPS\n-----------------------\nThe issue can be reproduced at will with the following steps:\n\n1. Navigate to MRP workbench.\n\nNav: Material Planner (R) -> MRP -> Workbench.\n\n2. See that the form throws the above error.",
+ 
+    "Cause": "Incorrect user preference setting.\n\nThe setting \"Field Width\" should not be set to 0. It should be a positive value. The default value is 10.",
+ 
+    "Solution": "Please perform the following in a test instance first prior to migrating the solution to higher instances:\n\n1. Run the below data fix:\nselect user_id\nfrom fnd_user\nwhere user_name = '&User_Name';\n\nUpdate MRP_WORKBENCH_DISPLAY_OPTIONS\nset SUMMARY_FIELD_WIDTH = 10\nWhere USER_ID = &user_id_from_sql_1;\n\nCommit;\n\n 2. Subsequently log into application and retest your issue.",
+ 
+    "Last Update": "2023-03-25 00:00:00",
+ 
+    "check_list": {
+ 
+      "query1": ["Verify the 'Field Width' user preference for the affected user", "SELECT USER_ID, PREFERENCE_NAME, PREFERENCE_VALUE FROM FND_USER_PREFERENCES WHERE USER_NAME = '&User_Name' AND PREFERENCE_NAME = 'FIELD_WIDTH';"],
+ 
+      "query2": ["Check the current setting of 'SUMMARY_FIELD_WIDTH' in MRP_WORKBENCH_DISPLAY_OPTIONS", "SELECT USER_ID, SUMMARY_FIELD_WIDTH FROM MRP_WORKBENCH_DISPLAY_OPTIONS WHERE USER_ID = (SELECT USER_ID FROM FND_USER WHERE USER_NAME = '&User_Name');"],
+ 
+      "query3": ["Check the canvas position for items causing the error", "SELECT CANVAS_NAME, ITEM_NAME, ITEM_TYPE, CANVAS_X_POSITION, CANVAS_Y_POSITION FROM YOUR_FORM_ITEMS_TABLE WHERE CANVAS_NAME = 'YOUR_CANVAS_NAME';"],
+ 
+      "query4": ["Validate other user preferences that might impact the form layout", "SELECT USER_ID, PREFERENCE_NAME, PREFERENCE_VALUE FROM FND_USER_PREFERENCES WHERE USER_NAME = '&User_Name';"],
+ 
+      "query5": ["Investigate any other customizations or personalizations that might affect the form", "SELECT * FROM YOUR_CUSTOMIZATIONS_TABLE;"]
+ 
+    },
+ 
+    "place_holder": ["&User_Name", "&user_id_from_sql_1", "YOUR_FORM_ITEMS_TABLE", "YOUR_CANVAS_NAME", "YOUR_CUSTOMIZATIONS_TABLE"]
+ 
+  },
+ 
+ 
+  "APP-INV-05649": {
+ 
+    "Module": "MRP",
+ 
+    "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=454589632214734&id=2994665.1&displayIndex=28&_afrWindowMode=0&_adf.ctrl-state=1bcmlc04p6_1503",
+ 
+    "Applies To": "Oracle Materials Requirement Planning - Version 12.1.3 to 12.1.3 [Release 12.1]\nInformation in this document applies to any platform.",
+ 
+    "Symptoms": "When attempting to query on the Item Supply Demand form,\nthe following error occurs.\n\nERROR\n-----------------------\nAPP-INV-05649 The Remote Call failed due to a time out\n\n \n\n\nThe issue can be reproduced at will with the following steps:\n1. Go to Inventory Responsibility / On-hand availability / Item Supply/Demand - Enter Item and click OK - Error will appear after 300 seconds.",
+ 
+    "Cause": "The SQL with the SQL_ID: dm3wnv6yu6vrd takes longer time to complete the execution.\nDue to this, the Remote Call Process ran for longer than the value in profile INV: RPC Timeout = 300 (seconds - 300 is the default setting)\n \nThis is reported in the following bug:\nBug 35955863 - APP-INV-05649 THE REMOTE CALL FAILED DUE TO A TIME OUT\n\nin 12.1.x: - the fix from Bug 32410945 is missing.",
+ 
+    "Solution": "To implement the solution, please execute the following steps:\n\n1. Apply the patch: 35955863:R12.MRP.B\n\n2. Ensure that you have taken a backup of your system before applying the recommended patch.\n\n3. Apply the patch in a test environment.\n\n4. Confirm the following minimum file version:\ninldsd.ppc 120.9.12010000.19\n\nTo verify - please run concurrent program - Diagnostic: Apps Check\n- This can be run from either Order Management or Purchasing Responsibility\n- Use View / Requests / Submit a new request\n- Then type Diag and hit Tab to bring up the report parameters\n- Please run this request for the following application - Inventory\n\n5. Retest the issue.\n\n6. Migrate the solution as appropriate to other environments.",
+ 
+    "Last Update": "2023-12-28 00:00:00",
+ 
+    "check_list": {
+ 
+      "query1": ["Identify SQL with SQL_ID dm3wnv6yu6vrd", "SELECT SQL_TEXT FROM V$SQL WHERE SQL_ID = 'dm3wnv6yu6vrd';"],
+ 
+      "query2": ["Check execution plan for the identified SQL_ID", "SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR('dm3wnv6yu6vrd'));"],
+ 
+      "query3": ["Check the value of INV: RPC Timeout profile setting", "SELECT PROFILE_OPTION_NAME, LEVEL_ID, LEVEL_VALUE FROM FND_PROFILE_OPTIONS WHERE PROFILE_OPTION_NAME = 'INV: RPC Timeout';"],
+ 
+      "query4": ["Verify the version of inldsd.ppc file", "SELECT FILE_NAME, PRODUCT_VERSION FROM FND_PRODUCT_FILES WHERE FILE_NAME = 'inldsd.ppc';"],
+ 
+      "query5": ["Check if the patch 35955863 is applied", "SELECT * FROM AD_APPLIED_PATCHES WHERE PATCH_NAME = '35955863';"],
+ 
+      "query6": ["Verify concurrent program Diagnostic: Apps Check output", "Run the Diagnostic: Apps Check concurrent program with the specified parameters."],
+ 
+      "query7": ["Check for concurrent program requests related to the error", "SELECT REQUEST_ID, PHASE_CODE, STATUS_CODE, LOGFILE_NAME FROM FND_CONCURRENT_REQUESTS WHERE PROGRAM_APPLICATION_ID = (SELECT APPLICATION_ID FROM FND_APPLICATION WHERE APPLICATION_SHORT_NAME = 'INV') AND PROGRAM_NAME LIKE 'Diagnostic: Apps Check%';"]
+ 
+    },
+ 
+    "place_holder": ["dm3wnv6yu6vrd", "Diag", "INV"]
+ 
+  },
+ 
+ 
+  "APP-FND-01564": {
+ 
+    "Module": "Inventory",
+ 
+    "URL": "https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=455159949855801&id=2449678.1&displayIndex=45&_afrWindowMode=0&_adf.ctrl-state=2krjxhdsi_835",
+ 
+    "Applies To": "Oracle Inventory Management - Version 12.2.6 and later",
+ 
+    "Symptoms": "On : 12.2.6 version, Inventory Transactions\n\nInventory Transaction worker error and terminates the Transaction manager .\nIssue started after application of patch 27913724:R12.OWF.C, ISG Consolidated Patch for Release 12.2 (18_2_2)\nUser can submit records in small batches , issue appears when the number of records to process in the interface table are more than 1000.\n\nERROR\n\nAPP-FND-01564: ORACLE error 1000 in inctcw\n\nCause: inctcw failed due to ORA-01000: maximum open cursors exceeded\nORA-06512: at \"APPS.FND_MESSAGE\", line 536\nORA-06512: at \"APPS.FND_MESSAGE\", line 576\nORA-06512: at \"APPS.FND_MESSAGE\", line 665\nORA-06512: at \"APPS.FND_MESSAGE\", line 777\nORA-06512: at \"APPS.FND_MESSAGE\", line 752.\n\n\nSTEPS\n\nThe issue can be reproduced at will with the following steps:\nLoad data into the interface table\nLaunch the Interface managers\n\n\nBUSINESS IMPACT\nThe issue has the following business impact:\nDue to this issue, user will not be able to process any inventory transactions\nIssue is in UAT instance and is impacting the testing process",
+ 
+    "Cause": "Open cursors exist with below query.\n\nselect organization_id from mtl_lot_numbers where inventory_item_id = :1\nand lot_number = :2 and organization_id <> :3 and rownum = 1\n\nThis query is getting called from java/keyentities/lot.java and all the\ncursors are closed as per standards.\n\nCustomer is on lower version java/keyentities/lot.java 120.29.12020000.13\n \nEVIDENCE OF CAUSE\n\nselect organization_id from mtl_lot_numbers where inventory_item_id = :1\nand lot_number = :2 and organization_id <> :3 and rownum = 1\n\nSUPPORT OF CONCLUSION\n\nDevelopment has confirmed the cause via specific bug Bug 28213705 logged for this customer",
+ 
+    "Solution": "Increase the open cursors\n\nALTER SYSTEM SET open_cursors = 8000 SCOPE=BOTH;\n\ncommit;\n\nVerify the issue.",
+ 
+    "Last Update": "2020-01-08 00:00:00",
+ 
+    "check_list": {
+ 
+      "query1": ["Check Open Cursors", "SELECT COUNT(*) AS open_cursors_count FROM v$open_cursor WHERE sid = (SELECT DISTINCT sid FROM v$mystat WHERE rownum = 1);"],
+ 
+      "query2": ["Identify Blocking Sessions", "SELECT blocking_session, sid, serial# FROM v$session WHERE blocking_session IS NOT NULL;"],
+ 
+      "query3": ["List Active Transactions", "SELECT * FROM dba_2pc_pending;"],
+ 
+      "query4": ["Check for Locks on mtl_lot_numbers", "SELECT * FROM dba_locks WHERE table_name = 'MTL_LOT_NUMBERS';"],
+ 
+      "query5": ["Review Currently Executing SQL", "SELECT sql_text, sql_id, child_number, executions, parse_calls FROM v$sql WHERE sql_text LIKE '%MTL_LOT_NUMBERS%';"],
+ 
+      "query6": ["Identify Sessions Holding Cursors", "SELECT a.sid, a.serial#, a.username, a.osuser, a.program, b.sql_text FROM v$session a, v$sqltext b WHERE a.sql_address = b.address AND a.sql_hash_value = b.hash_value AND a.status = 'ACTIVE' AND a.username IS NOT NULL;"],
+ 
+      "query7": ["Check for Recent Errors in Alert Log", "SELECT * FROM alert_log WHERE message_text LIKE '%ORA-%' AND timestamp > SYSTIMESTAMP - INTERVAL '1' HOUR;"],
+ 
+      "query8": ["Review Interface Table Data", "SELECT * FROM your_interface_table WHERE ROWNUM <= 10; -- Replace with the actual name of your interface table"]
+ 
+    },
+ 
+    "place_holder": ["Your_Interface_Table", ":1", ":2", ":3"]
+ 
+  }}
+ 

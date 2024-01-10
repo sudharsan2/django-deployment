@@ -6,7 +6,7 @@ import json
 
 # Create your views here.
 def function1(request):
-    json_path =  "/Users/smartass/coding/python/django/L1_phase1/l1_automation/l1_support/sql_l1_data.json"
+    json_path =  "/Users/smartass/coding/python/django/L1_phase1/l1_automation/l1_support/validated_sql.json"
     with open(json_path, 'r') as file:
         json_data = json.load(file)
 
