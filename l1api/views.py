@@ -62,7 +62,6 @@ class ResumeQueryAPIView(View):
 
                     # results[model.id] = query_results
             return JsonResponse({'sql_query': sql_query})
-            # sql_query=[]
         except json.JSONDecodeError:
             return JsonResponse({'message': 'Invalid JSON data'})
 
